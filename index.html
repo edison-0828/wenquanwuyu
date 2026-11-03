@@ -57,25 +57,46 @@ html,body{height:100%;overflow:hidden}main.scene{width:100%;max-width:none;heigh
 .map-camera{display:flex;justify-content:flex-end;gap:5px;margin-top:6px;pointer-events:none}
 .map-camera button{pointer-events:auto;min-height:34px;padding:4px 9px;background:#fff4dbe8;border:1px solid #91a080;border-radius:5px;color:#39584a}
 .scene canvas{cursor:grab}.scene canvas.dragging{cursor:grabbing}
+.ranking-own{margin:4px 0;padding:8px;border:1px solid #c59f60;border-left:4px solid #a7743c;border-radius:5px;background:#f5e5b9;color:#493921;align-items:center}
+.ranking-own .ranking-name{font-size:17px;font-weight:800}.ranking-own strong{font-size:15px;white-space:nowrap}.ranking-you{display:inline-block;padding:0 5px;border-radius:4px;background:#76512d;color:#fff8df;font-size:11px;vertical-align:middle}
+.celebrity-card{display:grid;grid-template-columns:48px minmax(0,1fr);gap:9px;align-items:center}
+.celebrity-portrait{width:46px;height:46px;background:#e9d6ad;border:1px solid #b69a6e;border-radius:5px}
+.celebrity-card.locked .celebrity-portrait{filter:saturate(.35);opacity:.66}
+.celebrity-card .row{gap:4px}.celebrity-card .row strong{font-size:11px;white-space:nowrap}
+.map-title strong{box-shadow:inset 0 0 0 2px #25493d,inset 0 0 0 3px #bca46a80;letter-spacing:.08em;padding-inline:11px}
+.map-menu .items{max-height:108px;overflow-y:auto;overscroll-behavior:contain;padding-right:3px;align-content:start}
+.placement-status{display:inline-block;padding:3px 8px;border:1px solid #b4c4a1;border-radius:4px;background:#e0ecd2;color:#31584a;font-weight:700}.placement-status.warning{border-color:#d6a375;background:#f6e3c7;color:#81523d}
+.map-menu.pick-tile{bottom:calc(max(8px,env(safe-area-inset-bottom)) + 57px);padding:7px 9px}.pick-tile .map-head{gap:8px}.pick-tile p{margin:2px 0 0}
+.map-camera #weather-label{margin-right:auto;align-self:center;padding:5px 8px;background:#fff4dbe8;border:1px solid #a7ad8b;border-radius:5px;color:#39584a;font-size:12px}
 </style>
 </head>
 <body>
 <main class="scene">
 <canvas id="map" width="480" height="430" tabindex="0" aria-label="旅馆地图。点地块操作，也可用方向键选地块"></canvas>
 <div class="map-hud">
-  <div class="map-title"><strong>松间温泉</strong><span id="badge" class="badge"></span><button id="help" aria-label="玩法说明">？</button></div>
+  <div class="map-title"><strong>松间温泉</strong><span id="badge" class="badge"></span><button id="settings-open" aria-label="设置">设置</button></div>
   <div class="stats"><div><small>营业日</small><b id="day"></b></div><div><small>资金</small><b id="cash"></b></div><button type="button" data-tab="environment" aria-label="查看环境评分"><small>环境评分</small><b id="environment"></b></button><div><small>入住上限</small><b id="capacity"></b></div></div>
-  <div class="map-camera"><button id="street-camera" hidden>温泉街</button><button id="camera-toggle" aria-label="切换地图近景和全景">全景</button></div>
+  <div class="map-camera"><span id="weather-label"></span><button id="street-camera" hidden>温泉街</button><button id="camera-toggle" aria-label="切换地图近景和全景">全景</button></div>
 </div>
 <button class="land-sign" id="land-sign" type="button" hidden><strong>土地出售</strong><span id="land-name"></span></button>
 <div id="guest-bubble" class="guest-bubble" hidden></div>
 <section id="map-menu" class="map-menu" aria-label="地图地块操作" hidden></section>
 <div class="map-dock">
   <div id="note" class="note" aria-live="polite"></div>
-  <div class="controls"><button data-tab="report">账簿</button><button id="open" class="primary">开始营业</button></div>
+  <div class="controls"><button data-tab="report">账簿</button><button data-tab="ranking">排行</button><button data-tab="celebrities">图鉴</button><button id="open" class="primary">开始营业</button></div>
 </div>
 <section id="content" class="map-sheet" aria-label="旅馆经营面板" hidden></section>
-<dialog id="manual"><h2>旅馆手册</h2><p>点地图上的空地，在图上选择设施并确认建造。点已有设施可以查看详情或拆除。客人从下方入口沿石板路行走，只有接到入口的设施才会营业。点地图上的「土地出售」木牌可以购地。</p><p>客房决定接待上限。温泉和餐室有每日容量，满了就有客人用不上。松树邻接温泉、石灯邻接客房会提高舒适度。</p><p>每晚结算收入和维护费。点击顶部环境评分可查看庭园加分、客流加成和稀有赏景客的到访概率。客房等级越高，住宿费越高。旅行团预约会在开业前弹出，可以接单或略过。游戏会自动保存在当前浏览器，离开后回来可以接着当天的营业。</p><button id="close-help">明白了</button></dialog>
+<dialog id="settings"><h2>设置</h2>
+  <label for="volume">音效音量 <output id="volume-value"></output></label>
+  <input id="volume" type="range" min="0" max="100" step="1" style="display:block;width:100%;margin:10px 0">
+  <button id="preview-sound">试听</button>
+  <h3>存档</h3><p>游戏会自动保存到当前浏览器。可手动保存，或下载备份。</p>
+  <div class="controls"><button id="save-now">立即保存</button><button id="export-save">导出存档</button><button id="import-save">导入存档</button></div>
+  <input id="save-file" type="file" accept=".json,application/json" hidden>
+  <p id="settings-status" role="status"></p>
+  <div class="controls"><button id="help">玩法说明</button><button id="settings-close" class="primary">关闭</button></div>
+</dialog>
+<dialog id="manual"><h2>旅馆手册</h2><p>点地图上的空地，在图上选择设施并确认建造。点已有设施可以查看详情或拆除。客人从下方入口沿石板路行走，只有接到入口的设施才会营业。点地图上的「土地出售」木牌可以购地。</p><p>客房决定接待上限。温泉和餐室有每日容量，满了就有客人用不上。松树邻接温泉、石灯邻接客房会提高舒适度。</p><p>每晚结算收入和维护费。每位客人最多顺访两项商街消费。营业额超过 6,000 文的部分会产生额外运营成本。点击顶部环境评分可查看庭园加分、客流加成和稀有赏景客的到访概率。客房等级越高，住宿费越高。旅行团预约会在开业前弹出，可以接单或略过。游戏会自动保存在当前浏览器，离开后回来可以接着当天的营业。</p><button id="close-help">明白了</button></dialog>
 <dialog id="tour-offer"><h2>山间奇遇 · 旅行团预约</h2>
   <p id="tour-offer-detail"></p>
   <div class="controls"><button id="skip-tour">略过</button><button id="accept-tour" class="primary">接下预约</button></div>
@@ -93,6 +114,9 @@ const items = {
   cobble:{name:"鹅卵石路",cost:45,keep:0,detail:"圆石庭园小径，可与其他道路相连。"},
   boardwalk:{name:"木栈道",cost:55,keep:0,detail:"暖色木板步道，可与其他道路相连。"},
   room:{name:"榻榻米客房", cost:450, keep:35, detail:"每日接待 2 位客人，住宿收入 145／人。"},
+  machiya:{name:"暖木町家",cost:820,keep:58,detail:"木格窗与长雨檐的町家。一级接待 3 人，住宿 170 文／人。"},
+  kura:{name:"白壁藏宿",cost:1650,keep:95,detail:"白墙、石基和黛瓦的藏造客宿。一级接待 4 人，住宿 220 文／人。"},
+  towerInn:{name:"月见楼",cost:3200,keep:175,detail:"双层青瓦旅馆。一级接待 6 人，住宿 270 文／人。"},
   bath:{name:"露天温泉", cost:680, keep:50, detail:"每日可供 4 位客人泡汤，收入 75／人。旁边种松更舒适。"},
   food:{name:"山味餐室", cost:380, keep:30, detail:"每日供应 3 份晚饭，收入 55／份。"},
   shop:{name:"土产铺", cost:310, keep:20, detail:"每日可服务 4 位客人，收入 35／人。"},
@@ -101,6 +125,9 @@ const items = {
   dango:{name:"炭火团子屋",cost:950,keep:45,detail:"烤团子小摊。接通道路后，普通客消费 45 文。"},
   teaHouse:{name:"抹茶茶寮",cost:1600,keep:70,detail:"招待散步游客喝茶。接通道路后，普通客消费 80 文。"},
   arcade:{name:"祭典游艺馆",cost:2400,keep:110,detail:"射靶和套圈摊。接通道路后，普通客消费 115 文。"},
+  stage:{name:"和风戏台",cost:12000,keep:420,detail:"游客可沿路来观看演出，普通客消费 220 文。"},
+  buffet:{name:"灯火夜市",cost:8500,keep:300,detail:"挂着灯笼的夜间食集，普通客消费 165 文。"},
+  moonGarden:{name:"月映水庭",cost:18000,keep:180,detail:"月门与水面组成的庭园地标，每级环境 +55。"},
   pavilion:{name:"花见休憩亭",cost:1200,keep:16,detail:"带长椅的赏花亭，每级增加 20 点环境评分。"},
   pine:{name:"庭园松", cost:100, keep:3, detail:"与温泉上下左右相邻时，提高泡汤体验。"},
   lamp:{name:"石灯笼", cost:80, keep:2, detail:"与客房上下左右相邻时，提高住宿体验。"},
@@ -120,7 +147,9 @@ const facadeCost=120;
 const streetServices={
   dango:{fee:45,comment:"刚烤好的团子真香。"},
   teaHouse:{fee:80,comment:"坐下来喝杯抹茶，歇歇脚。"},
-  arcade:{fee:115,comment:"在游艺馆赢了个小奖品！"}
+  arcade:{fee:115,comment:"在游艺馆赢了个小奖品！"},
+  buffet:{fee:165,comment:"夜市灯笼亮起来的时候，真想再逛一圈。"},
+  stage:{fee:220,comment:"今晚戏台的演出很精彩。"}
 };
 const animals={
   koi:{name:"红白锦鲤",cost:280,score:12,color:"#e79a70",accent:"#fff2cb",hosts:["water","pond"]},
@@ -128,13 +157,15 @@ const animals={
   sparrow:{name:"山雀",cost:160,score:7,color:"#8b7f5e",accent:"#f0d7a3",hosts:["pine","cherry"]},
   whiteEye:{name:"绣眼鸟",cost:320,score:14,color:"#8eaa66",accent:"#f9e8b1",hosts:["pine","cherry"]}
 };
+const lodgingRates={room:145,machiya:170,kura:220,towerInn:270};
+const isLodging=type=>Object.hasOwn(lodgingRates,type);
 const buildCategories=[
   {id:"all",name:"全部",items:Object.keys(items)},
   {id:"roads",name:"道路",items:[...roadTypes,"water"]},
-  {id:"lodging",name:"住宿",items:["room"]},
+  {id:"lodging",name:"住宿",items:Object.keys(lodgingRates)},
   {id:"services",name:"服务",items:["bath","food","shop","gifts","cinema"]},
   {id:"street",name:"温泉街",items:[...Object.keys(streetServices),"gifts","cinema","pavilion"]},
-  {id:"garden",name:"庭园",items:["pine","lamp","pond","cherry","torii","pagoda","pavilion","gate"]},
+  {id:"garden",name:"庭园",items:["pine","lamp","pond","cherry","torii","pagoda","pavilion","moonGarden","gate"]},
   {id:"animals",name:"动物",items:[]}
 ];
 function fresh() {
@@ -154,18 +185,18 @@ delete state.roomStyles;
 state.roomExtensions ??= {};
 const landSales=[
   {id:"eastOpen",name:"东坡庭园",width:2,cost:900,environment:40,existing:true},
-  {id:"ridgeOpen",name:"松岭外坡",width:3,cost:1800},
-  {id:"sakura",name:"樱坂庭园",width:4,cost:6000},
-  {id:"moon",name:"月见高台",width:5,cost:12000},
-  {id:"riverside",name:"河畔温泉街",rows:3,cost:16000},
-  {id:"southGarden",name:"南谷花见苑",rows:3,cost:24000},
-  {id:"acrossRiver",name:"桥头商街 · 一期",start:13,rows:3,columns:8,cost:36000},
-  {id:"riverMarket",name:"樱灯市集 · 二期",start:16,rows:4,columns:10,cost:48000},
-  {id:"riverTheater",name:"松影广场 · 三期",start:20,rows:4,columns:12,cost:64000},
-  {id:"riverRetreat",name:"月隐长街 · 四期",start:24,rows:4,columns:14,cost:85000},
-  {id:"riverEast",name:"东岸花廊",start:28,columns:19,infill:true,cost:98000},
-  {id:"riverPines",name:"松风町",start:28,rows:6,columns:19,cost:125000},
-  {id:"riverMoon",name:"月湾别苑",start:34,rows:6,columns:19,cost:160000}
+  {id:"ridgeOpen",name:"松岭外坡",width:3,cost:3000},
+  {id:"sakura",name:"樱坂庭园",width:4,cost:10500},
+  {id:"moon",name:"月见高台",width:5,cost:21500},
+  {id:"riverside",name:"河畔温泉街",rows:3,cost:34000},
+  {id:"southGarden",name:"南谷花见苑",rows:3,cost:52000},
+  {id:"acrossRiver",name:"桥头商街 · 一期",start:13,rows:3,columns:8,cost:78000},
+  {id:"riverMarket",name:"樱灯市集 · 二期",start:16,rows:4,columns:10,cost:105000},
+  {id:"riverTheater",name:"松影广场 · 三期",start:20,rows:4,columns:12,cost:140000},
+  {id:"riverRetreat",name:"月隐长街 · 四期",start:24,rows:4,columns:14,cost:185000},
+  {id:"riverEast",name:"东岸花廊",start:28,columns:19,infill:true,cost:235000},
+  {id:"riverPines",name:"松风町",start:28,rows:6,columns:19,cost:305000},
+  {id:"riverMoon",name:"月湾别苑",start:34,rows:6,columns:19,cost:390000}
 ];
 let W=state.grid[0].length,H=state.grid.length;
 const bankStart=13, bankLeft=1, bankOffset=[-65,155];
@@ -185,7 +216,8 @@ const guestTypes = {
   bath: {name:"泡汤客"},
   food: {name:"尝鲜客"},
   garden: {name:"赏景客（稀有）"},
-  group: {name:"旅行团客"}
+  group: {name:"旅行团客"},
+  celebrity: {name:"地方名人"}
 };
 let mode = state.history[0]?.day === state.day ? "closed" : "ready";
 const checkpoint=state.businessCheckpoint;
@@ -201,13 +233,19 @@ const neighbors = (x,y) => [[x+1,y],[x-1,y],[x,y+1],[x,y-1]].filter(([a,b])=>ins
 // Keep the original tile IDs so upgraded and expanded rooms survive a wider map.
 const key = (x,y) => y>=BASE_HEIGHT?1000+y*32+x:
   x<BASE_WIDTH?y*BASE_WIDTH+x:BASE_WIDTH*BASE_HEIGHT+(x-BASE_WIDTH)*BASE_HEIGHT+y;
-const capacityByType={room:[2,3,4,5,6,8],bath:[4,6,8,10,12,15],food:[3,5,7,9,11,14],shop:[4,6,8,10,12,15],gifts:[4,6,8,10,13,16],cinema:[5,7,10,13,16,20],dango:[5,7,9,12,15,18],teaHouse:[4,6,8,11,14,18],arcade:[5,8,11,14,18,22]};
+const capacityByType={room:[2,3,4,5,6,8],machiya:[3,4,5,6,8,10],kura:[4,5,7,9,11,13],towerInn:[6,8,10,12,15,18],bath:[4,6,8,10,12,15],food:[3,5,7,9,11,14],shop:[4,6,8,10,12,15],gifts:[4,6,8,10,13,16],cinema:[5,7,10,13,16,20],dango:[5,7,9,12,15,18],teaHouse:[4,6,8,11,14,18],arcade:[5,8,11,14,18,22],buffet:[12,16,20,24,30,36],stage:[10,14,19,24,30,38]};
 const tierNames=["初建","整修","雅致","精品","名物","地标"];
 const tierColors=["#c49d68","#bf905c","#668f83","#7286a5","#a67385","#ca9a53"];
-const sceneryPoints={pine:5,lamp:4,pond:6,cherry:9,torii:11,pagoda:14,pavilion:20,gate:15};
+const sceneryPoints={pine:5,lamp:4,pond:6,cherry:9,torii:11,pagoda:14,pavilion:20,moonGarden:55,gate:15};
 const sceneryScore=(type,level)=>sceneryPoints[type]*level;
 const canUpgrade=type=>Boolean(capacityByType[type]||sceneryPoints[type]);
 const tierDetails={
+  stage:["红帘戏台","挂灯戏台","绯檐剧场","双层戏馆","围廊戏馆","金脊大剧场"],
+  buffet:["纸灯夜市","双灯食集","赤瓦食街","双层食楼","围廊夜市","金脊夜市"],
+  moonGarden:["映月池","石岸月池","双灯月池","水上月门","花影月庭","金月水庭"],
+  machiya:["长檐木屋","格栅町家","红帘町家","双层町家","围廊町家","金脊町家"],
+  kura:["石基白藏","双窗白藏","灰檐藏宿","双层藏宿","围廊藏宿","金脊白藏"],
+  towerInn:["双层月见楼","灯前月见楼","青瓦双檐楼","三层月见楼","围廊月见楼","金脊月见楼"],
   gate:["朱柱牌坊","青檐牌坊","双檐牌坊","挂灯牌坊","金边牌坊","金额大牌坊"],
   dango:["团子木摊","暖帘团子屋","瓦檐团子屋","双层甜点铺","围廊团子屋","金脊甜点馆"],
   teaHouse:["青帘茶屋","带檐茶寮","青瓦茶寮","双层茶楼","围廊茶楼","金脊茶楼"],
@@ -230,7 +268,8 @@ const facilityLevel=(x,y)=>{
   const saved=state.upgrades[key(x,y)];
   return saved===true?2:Number.isInteger(saved)?Math.max(1,Math.min(tierNames.length,saved)):1;
 };
-const upgradeCost=(type,level)=>Math.ceil(items[type].cost*(60+(level-1)*25)/100);
+const upgradeRates=[60,85,135,190,260];
+const upgradeCost=(type,level)=>Math.ceil(items[type].cost*upgradeRates[level-1]/100);
 const extraMaintenance=(type,level)=>Math.ceil(items[type].keep*.4)*(level-1);
 const roomExpansion={cost:320,keep:18,capacity:2};
 const coords=index=>index>=1000?[(index-1000)%32,Math.floor((index-1000)/32)]:
@@ -239,7 +278,7 @@ const coords=index=>index>=1000?[(index-1000)%32,Math.floor((index-1000)/32)]:
 const extensionAt=(x,y)=>Object.keys(state.roomExtensions).find(index=>state.roomExtensions[index]===key(x,y));
 const canExtendTo=(x,y)=>!locked(x)&&!state.grid[y][x]&&state.roomExtensions[key(x,y)]===undefined;
 const capacityAt=(type,x,y)=>capacityByType[type][facilityLevel(x,y)-1]+
-  (type==="room"&&extensionAt(x,y)!==undefined?roomExpansion.capacity:0);
+  (isLodging(type)&&extensionAt(x,y)!==undefined?roomExpansion.capacity:0);
 function roadRoutes(){
   const routes = new Map([[key(...entrance), [entrance]]]);
   const queue = [entrance];
@@ -254,21 +293,23 @@ function roadRoutes(){
   return routes;
 }
 function facilities(routes=roadRoutes()){
-  const found=Object.fromEntries(Object.keys(capacityByType).map(type=>[type,[]]));
+  const found=Object.fromEntries(Object.keys(capacityByType).filter(type=>type==="room"||!isLodging(type)).map(type=>[type,[]]));
   for (let y=0;y<H;y++) for (let x=0;x<W;x++) {
     const type=state.grid[y][x];
-    if (!(type in found)) continue;
-    const extension=type==="room"?extensionAt(x,y):undefined;
+    const family=isLodging(type)?"room":type;
+    if (!(family in found)) continue;
+    const extension=isLodging(type)?extensionAt(x,y):undefined;
     const near=neighbors(x,y);
     if(extension!==undefined)near.push(...neighbors(...coords(extension)));
     const access=near.map(([a,b])=>routes.get(key(a,b))).filter(Boolean).sort((a,b)=>a.length-b.length)[0];
     if (!access) continue;
-    const bonusType={room:"lamp",bath:"pine",food:"pond"}[type];
-    found[type].push({x,y,route:access, capacity:capacityAt(type,x,y), bonus:near.some(([a,b])=>state.grid[b][a]===bonusType)});
+    const bonusType={room:"lamp",bath:"pine",food:"pond"}[family];
+    found[family].push({x,y,type,route:access, capacity:capacityAt(type,x,y), bonus:near.some(([a,b])=>state.grid[b][a]===bonusType)});
   }
   return found;
 }
 const sceneryCombos={room:5,bath:6,food:4};
+const rareEnvironment=150, celebrityEnvironment=500, rareGuestLimit=2, overlapChance=.05;
 function environment(f){
   const plants=state.grid.reduce((sum,row,y)=>sum+row.reduce((subtotal,type,x)=>
     subtotal+(type==="water"?2:sceneryPoints[type]?sceneryScore(type,facilityLevel(x,y)):0),0),0);
@@ -280,11 +321,71 @@ function environment(f){
     return sum+(animal?.hosts.includes(state.grid[y]?.[x])?animal.score:0);
   },0);
   const score=plants+combos+animalScore;
-  return {plants,combos,animalScore,score,extraVisitors:Math.floor(score/25),rareChance:2+98*score/(250+score)};
+  return {plants,combos,animalScore,score,extraVisitors:Math.floor(score/25),rareChance:score<rareEnvironment?0:2+98*score/(250+score)};
 }
 const innCapacity=available=>available.room.reduce((sum,room)=>sum+room.capacity,0);
-const lodgingFee=level=>145+25*(level-1);
+const lodgingFee=(type,level)=>lodgingRates[type]+25*(level-1);
 const businessDuration=30000;
+const celebrityBook=[
+  {id:"scribe",name:"青木先生",role:"乡里教书先生",wish:"泡上温泉并吃到晚饭",happy:({bath,food})=>Boolean(bath&&food)},
+  {id:"painter",name:"水野春",role:"山水画师",wish:"泡上温泉，环境达到 2000 分",happy:({bath,outlook})=>Boolean(bath&&outlook.score>=2000)},
+  {id:"merchant",name:"藤原绫",role:"商街会长",wish:"泡上温泉并买到纪念品",happy:({bath,gifts})=>Boolean(bath&&gifts)},
+  {id:"performer",name:"松本响",role:"祭典鼓师",wish:"泡上温泉并看一场戏",happy:({bath,stage})=>Boolean(bath&&stage)}
+];
+const celebrityChance=.18;
+const randomCelebrity=()=>Math.random()<celebrityChance?
+  celebrityBook[Math.floor(Math.random()*celebrityBook.length)]:null;
+const weatherTypes={
+  sun:{name:"晴天",visitors:2},
+  rain:{name:"雨天",visitors:-2},
+  mist:{name:"山雾",visitors:-1}
+};
+function dailyWeather(){
+  if(state.weatherDay!==state.day||!Object.hasOwn(weatherTypes,state.weather)){
+    const roll=Math.random();
+    state.weatherDay=state.day;
+    state.weather=roll<.60?"sun":roll<.88?"rain":"mist";
+    save();
+  }
+  return state.weather;
+}
+function weatherLabel(id){
+  const {name,visitors}=weatherTypes[id];
+  return name+" · 客流 "+(visitors>0?"+":"")+visitors;
+}
+const monthLength=30;
+const rivalInns=[
+  ["白石汤屋",1400,25,58],["青枫旅舍",3000,45,63],["竹影客舍",6500,80,68],
+  ["桐川温泉馆",12000,125,72],["樱岛御宿",22000,195,77],["流泉山庄",37000,280,81],
+  ["月桥汤庭",58000,390,85],["鹤鸣温泉乡",85000,530,89],["雪峰大旅馆",120000,700,93]
+].map(([name,income,environment,satisfaction])=>({name,income,environment,satisfaction}));
+const legacyReturnRates=[.60,.48,.36,.25,.15,.05];
+const rankingReturnRates=[.60,.53,.46,.39,.32,.26,.20,.15,.10,.05];
+const returnChance=()=>state.ranking?.returnRate??legacyReturnRates[state.ranking?.place-1]??.15;
+function guestSatisfaction(report){
+  if(!report.shortage||!report.guests||!report.demand)return null;
+  const {room,bath,food}=report.shortage;
+  const reviews=report.reviewEvents||{};
+  const score=100-30*room/report.demand-40*bath/report.guests-30*food/report.guests+
+    (12*(reviews.good||0)-30*(reviews.bad||0))/report.guests;
+  return Math.round(Math.max(0,Math.min(100,score)));
+}
+const rankingPoints=inn=>Math.round(inn.income/500+inn.environment/5+inn.satisfaction*2);
+function monthStandings(month,environmentNow){
+  const reports=state.history.filter(report=>Math.ceil(report.day/monthLength)===month);
+  const average=values=>values.length?Math.round(values.reduce((sum,value)=>sum+value,0)/values.length):0;
+  const player={name:"松间温泉",player:true,
+    income:average(reports.map(report=>report.income||0)),
+    environment:reports.length?average(reports.map(report=>report.outlook?.score||0)):environmentNow,
+    satisfaction:average(reports.map(guestSatisfaction).filter(value=>value!==null))
+  };
+  const standings=[...rivalInns,player].map(inn=>({...inn,score:rankingPoints(inn)})).sort((a,b)=>b.score-a.score);
+  const place=standings.findIndex(inn=>inn.player)+1;
+  return {month,place,standings,days:reports.length,returnRate:rankingReturnRates[place-1]};
+}
+function settleRanking(){
+  if(state.day%monthLength===0)state.ranking=monthStandings(state.day/monthLength,0);
+}
 const guestWalkSpeed=52;
 const tour={size:3,multiplier:2,duration:20000};
 const hasTourOffer=()=>state.day===2||(state.day>2&&state.day%4===0);
@@ -334,10 +435,11 @@ function businessBadge(){
 function save(){
   if(mode==="running")state.businessCheckpoint={day:state.day,clock,run};
   else delete state.businessCheckpoint;
-  try{localStorage.setItem(SAVE,JSON.stringify(state))}catch{}
+  try{localStorage.setItem(SAVE,JSON.stringify(state));return true}catch{return false}
 }
+let replacingSave=false;
 function saveBusiness(){
-  if(mode==="running")save();
+  if(mode==="running"&&!replacingSave)save();
 }
 window.addEventListener("pagehide",saveBusiness);
 document.addEventListener("visibilitychange",()=>{
@@ -359,22 +461,31 @@ function upgradePlan(type,level,limit){
   }
   return {cost,target};
 }
+let buildPreview=null;
 function renderMapMenu(){
+  buildPreview=null;
   const menu=$("map-menu");
   menu.hidden=!cursor;
+  const picking=Boolean(cursor&&kind==="extend-room");
+  menu.classList.toggle("pick-tile",picking);
   if(!cursor)return;
+  if(picking){
+    menu.innerHTML='<div class="map-head"><b>扩房 · '+roomExpansion.cost+' 文</b><button id="map-room-expand">取消选地</button></div>'+
+      '<p id="map-feedback" aria-live="polite">点高亮空地即可施工。可拖动地图查看。</p>';
+    return;
+  }
   const [x,y]=cursor, type=state.grid[y][x];
-  const extended=type==="room"&&extensionAt(x,y)!==undefined;
+  const extended=isLodging(type)&&extensionAt(x,y)!==undefined;
   const entry=x===entrance[0]&&y===entrance[1];
   const title=locked(x)?"东坡地块":entry?"旅馆入口":items[type]?.name||"选择要建的设施";
-  const facility=type&&facilities()[type]?.find(f=>f.x===x&&f.y===y);
+  const facility=type&&facilities()[isLodging(type)?"room":type]?.find(f=>f.x===x&&f.y===y);
   const status=facility?.bonus?" · 庭园搭配生效":capacityByType[type]&&!facility?" · 未接通入口":"";
   const capacities=capacityByType[type];
   const level=facilityLevel(x,y);
   const scenery=sceneryPoints[type];
   const detail=locked(x)?"开放东坡后可以在这里建造。":entry?"连接旅馆和山道。":capacities?
     level+" 级 · "+tierNames[level-1]+(extended?" · 双格客房":"")+" · 每日容量 "+capacityAt(type,x,y)+" 人"+status+
-    (type==="room"?" · 住宿 "+lodgingFee(level)+" 文／人":"")+
+    (isLodging(type)?" · 住宿 "+lodgingFee(type,level)+" 文／人":"")+
     " · 每日维护 "+(items[type].keep+extraMaintenance(type,level)+(extended?roomExpansion.keep:0))+" 文":
     scenery?level+" 级 · 环境 +"+sceneryScore(type,level)+" 分 · 每日维护 "+(items[type].keep+extraMaintenance(type,level))+" 文":
     type?items[type].detail:"";
@@ -384,17 +495,28 @@ function renderMapMenu(){
     '<p>外观换为「'+tierDetails[type][level]+'」 · '+(scenery?
       '环境 +'+sceneryScore(type,level)+' → +'+sceneryScore(type,level+1)+' 分':
       '容量 '+capacityAt(type,x,y)+' → '+(capacityAt(type,x,y)+capacities[level]-capacities[level-1])+' 人')+
-    (type==="room"?' · 住宿 '+lodgingFee(level+1)+' 文／人':'')+
+    (isLodging(type)?' · 住宿 '+lodgingFee(type,level+1)+' 文／人':'')+
     ' · 每日维护 +'+extraMaintenance(type,2)+' 文</p>'+
     (level<tierNames.length-1?'<button class="map-confirm" id="map-upgrade-all" '+(batch.target===level?"disabled":"")+
       '>一键满级'+(batch.target>level?' · 升至 '+batch.target+' 级 · '+number(batch.cost)+' 文':'')+'</button>':""):"";
-  const expandRoom=mode==="ready"&&type==="room"&&!extended&&neighbors(x,y).some(([a,b])=>canExtendTo(a,b))?
+  const expandRoom=mode==="ready"&&isLodging(type)&&!extended&&neighbors(x,y).some(([a,b])=>canExtendTo(a,b))?
     '<button class="map-confirm" id="map-room-expand" '+(state.cash<roomExpansion.cost?"disabled":"")+'>'+
-    (kind==="extend-room"?"取消选地":"扩房 · "+roomExpansion.cost+" 文")+'</button>'+
-    '<p>'+(kind==="extend-room"?"点亮起的相邻空地施工。":"容量 +"+roomExpansion.capacity+" 人 · 每日维护 +"+roomExpansion.keep+" 文")+'</p>':"";
+    ("扩房 · "+roomExpansion.cost+" 文")+'</button>'+
+    '<p>'+("容量 +"+roomExpansion.capacity+" 人 · 每日维护 +"+roomExpansion.keep+" 文")+'</p>':"";
   menu.classList.toggle("top",pos(x,y)[1]>145);
   const buildable=mode==="ready"&&!locked(x)&&!entry&&!type;
   const kinds=buildable?buildCategories.find(category=>category.id===buildCategory).items:[];
+  let previewStatus="";
+  if(kinds.includes(kind)){
+    const needsRoad=Boolean(capacityByType[kind]||isRoad(kind));
+    const routes=needsRoad?roadRoutes():null;
+    const access=needsRoad?neighbors(x,y).find(([a,b])=>routes.has(key(a,b))):null;
+    const affordable=state.cash>=items[kind].cost;
+    buildPreview={x,y,type:kind,access,warning:!affordable||needsRoad&&!access};
+    const label=!affordable?"资金不足 · 还差 "+number(items[kind].cost-state.cash)+" 文":
+      needsRoad?(access?"已接通入口":"未接通入口 · 可施工，铺路后启用"):"可直接摆放";
+    previewStatus='<p><span class="placement-status'+(buildPreview.warning?' warning':'')+'">'+label+'</span></p>';
+  }
   const occupants=Object.entries(animals).filter(([,animal])=>animal.hosts.includes(type));
   const resident=animals[state.animals[key(x,y)]];
   const animalChoices=occupants.length?'<p>动物 · '+(resident?resident.name+' · 环境 +'+resident.score+' 分':'目前空着')+'</p>'+
@@ -412,12 +534,12 @@ function renderMapMenu(){
   const categoryTabs=buildable?'<div class="build-categories" aria-label="建筑分类">'+buildCategories.map(category=>
     '<button data-category="'+category.id+'" aria-pressed="'+(category.id===buildCategory)+'">'+category.name+'</button>').join("")+'</div>':"";
   menu.innerHTML='<div class="map-head"><b>'+title+'</b><button id="map-close" aria-label="关闭地块菜单">关闭</button></div>'+
-    (detail?'<p>'+detail+'</p>':'')+(canUpgrade(type)?'<p>外观 · '+tierDetails[type][level-1]+(level===tierNames.length?' · 已满级':'')+'</p>':'')+upgradeButton+expandRoom+roadChoices+facadeChoices+animalChoices+categoryTabs+animalGuide+
+    (detail?'<p>'+detail+'</p>':'')+(canUpgrade(type)?'<p>外观 · '+tierDetails[type][level-1]+(level===tierNames.length?' · 已满级':'')+'</p>':'')+upgradeButton+expandRoom+roadChoices+facadeChoices+animalChoices+categoryTabs+animalGuide+previewStatus+
     (kinds.length?'<div class="items">'+kinds.map(k=>'<button class="item '+(kind===k?"selected":"")+'" data-kind="'+k+'">'+items[k].name+'<span>'+number(items[k].cost)+' 文</span></button>').join("")+'</div>':'')+
     (entry&&mode==="ready"?'<button class="map-confirm" id="map-entry-gate">'+(state.entranceGateHidden?"恢复入口门楼":"移除入口门楼并保留道路")+'</button>':
     locked(x)?'<button class="map-confirm" id="map-expand">查看扩建</button>':
       mode==="ready"&&!entry&&type&&(type==="gate"||!bridgeRoad(x,y))?'<button class="map-confirm" id="map-remove">'+(type==="gate"?"拆除牌坊并保留石板路":"拆除")+' · 返还 '+Math.floor(items[type].cost*.25)+' 文</button>':
-      kinds.length&&kind?'<button class="map-confirm" id="map-place">建造 '+items[kind].name+' · '+number(items[kind].cost)+' 文</button>':
+      buildPreview?'<button class="map-confirm" id="map-place" '+(state.cash<items[kind].cost?"disabled":"")+'>建造 '+items[kind].name+' · '+number(items[kind].cost)+' 文</button>':
       !type&&mode!=="ready"?'<p>'+ (mode==="closed"?"准备下一日后即可施工。":"今日营业结束后即可施工。")+'</p>':'')+
     '<p id="map-feedback" aria-live="polite">'+(kinds.length&&kind?items[kind].detail:'')+'</p>';
 }
@@ -446,7 +568,12 @@ $("map-menu").addEventListener("click",e=>{
     save();renderPanel();renderMapMenu();
     note("已更换"+items[state.grid[y][x]].name+"的外观。");
   }
-  if(button.dataset.kind){kind=button.dataset.kind;renderMapMenu()}
+  if(button.dataset.kind){
+    const scroll=button.parentElement.scrollTop;
+    kind=button.dataset.kind;
+    renderMapMenu();
+    $("map-menu").querySelector(".items").scrollTop=scroll;
+  }
   if(button.id==="map-place")place();
   if(button.id==="map-entry-gate"&&mode==="ready"&&cursor?.[0]===entrance[0]&&cursor[1]===entrance[1]){
     state.entranceGateHidden=!state.entranceGateHidden;
@@ -474,10 +601,24 @@ function upgradeFacility(all){
   save();renderPanel();renderMapMenu();
   note("已升至 "+target+" 级，换上"+tierDetails[type][target-1]+"。共花费 "+number(cost)+" 文。");
 }
+function celebrityPortrait(id){
+  const colors={scribe:["#5f8069","#58483e"],painter:["#8c6f91","#5a4046"],
+    merchant:["#9e605c","#493834"],performer:["#577a91","#343e4b"]};
+  const [coat,hair]=colors[id];
+  return '<svg class="celebrity-portrait" aria-hidden="true" viewBox="0 0 24 24" shape-rendering="crispEdges">'+
+    '<path fill="#5a443f" d="M6 16h12v2h2v4H4v-4h2z"/><path fill="'+coat+'" d="M6 18h12v4H6z"/>'+
+    '<path fill="#f5d9a9" d="M10 17h4v2h-1v2h-2v-2h-1z"/><path fill="'+hair+'" d="M8 4h9v2h2v8h-2v2H7v-2H5V8h2V6h1z"/>'+
+    '<path fill="#efbd94" d="M8 9h9v5h-2v2H9v-2H7v-4h1z"/>'+
+    '<path fill="'+hair+'" d="M10 10h1v2h-1zm5 0h1v2h-1z"/><path fill="#b77665" d="M12 14h2v1h-2z"/>'+
+    (id==="scribe"?'<path fill="#856a50" d="M8 10h9v1H8z"/>':id==="painter"?'<path fill="#ef9c9e" d="M6 7h3v3H6z"/>':
+      id==="merchant"?'<path fill="#f1ce83" d="M16 6h2v4h-2z"/>':'<path fill="#c66659" d="M6 7h12v2H6z"/>')+'</svg>';
+}
 function renderPanel() {
   $("day").textContent=state.day+" 日";
   $("cash").textContent=number(state.cash);
   const available=facilities();
+  const weather=dailyWeather();
+  $("weather-label").textContent=weatherLabel(weather);
   const outlook=mode==="running"?run.outlook:environment(available);
   $("environment").textContent=number(outlook.score);
   $("street-camera").hidden=!state.acrossRiver&&!nextLand()?.columns;
@@ -488,6 +629,35 @@ function renderPanel() {
   document.querySelectorAll("[data-tab]").forEach(btn=>btn.classList.toggle("active",btn.dataset.tab===tab));
   $("content").hidden=!tab;
   const closeSheet='<button class="sheet-close" id="close-sheet">关闭</button>';
+  if(tab==="celebrities"){
+    const visits=state.celebrityVisits||{};
+    $("content").innerHTML='<div class="report">'+closeSheet+'<b>地方名人图鉴 · '+Object.keys(visits).length+'／'+celebrityBook.length+'</b>'+
+      '<p>环境达到 500 分且温泉接通入口后，每天开业有 18% 机会随机来一位名人。接待名人当天营业额 +20%。满意则下一次营业额 +15%，不满意则 −15%。</p>'+
+      celebrityBook.map(celebrity=>{
+        const record=visits[celebrity.id];
+        return '<section class="goal celebrity-card'+(record?'':' locked')+'">'+celebrityPortrait(celebrity.id)+'<div><div class="row"><b>'+celebrity.name+' · '+celebrity.role+'</b><strong>'+
+          (record?'已到访 '+record.count+' 次':"待解锁")+'</strong></div><p>偏好 · '+celebrity.wish+'</p>'+
+          (record?'<p>首次到访第 '+record.firstDay+' 日 · 最近一次'+(record.happy?"满意":"不满意")+'</p>':"")+'</div></section>';
+      }).join("")+'</div>';
+    return;
+  }
+  if(tab==="ranking"){
+    const month=Math.ceil(state.day/monthLength);
+    const live=monthStandings(month,outlook.score);
+    const leader=live.standings[live.place-2], own=live.standings[live.place-1];
+    const settled=state.ranking;
+    const nextDay=(month+(mode==="closed"&&state.day%monthLength===0?1:0))*monthLength;
+    $("content").innerHTML='<div class="report">'+closeSheet+'<b>温泉度假村排行</b>'+
+      '<p>第 '+month+' 月 · 当前第 '+live.place+' 名／'+live.standings.length+' 家 · 已结算 '+live.days+' 日</p>'+
+      (!live.days?'<p>今天开业结算后，榜单会加入收入和满意度。</p>':"")+
+      '<p>月内日均收入每 500 文计 1 分，平均环境每 5 点计 1 分，平均满意度每 1% 计 2 分。满意度按入住、泡汤和用餐的满足情况计算，游客好评会加分，用餐意外差评会扣分。</p>'+
+      live.standings.map((inn,i)=>'<div class="row'+(inn.player?' ranking-own':'')+'"><span><span class="ranking-name">'+(i+1)+'　'+inn.name+(inn.player?' <span class="ranking-you">你</span>':'')+
+        '</span><br>日均 '+number(inn.income)+' 文 · 环境 '+number(inn.environment)+' · 满意 '+inn.satisfaction+'%</span><strong>'+number(inn.score)+' 分</strong></div>').join("")+
+      (leader?'<p>要超过前一名，还差 '+(leader.score-own.score+1)+' 个综合分。可对照上方三项数据。</p>':'<p>目前位居榜首。</p>')+
+      '<p>'+(settled?'上次正式结榜第 '+settled.place+' 名。':'首期正式名次将在月末公布。')+
+      ' 当前回访率 '+Math.round(returnChance()*100)+'%，下一次正式结榜在第 '+nextDay+' 日。</p></div>';
+    return;
+  }
   if(tab==="land"){
     const area=nextLand();
     if(!area){tab="";renderPanel();return}
@@ -510,14 +680,25 @@ function renderPanel() {
       '<div class="row"><span>鸟类与鱼类</span><strong>+'+(outlook.animalScore||0)+' 分</strong></div>'+
       '<div class="row"><span>已通路设施的景观搭配</span><strong>+'+outlook.combos+' 分</strong></div>'+
       '<div class="row"><span>每日到访加成</span><strong>+'+outlook.extraVisitors+' 人</strong></div>'+
-      '<div class="row"><span>每位来客是赏景客的概率</span><strong>'+Number(outlook.rareChance.toFixed(1))+'%</strong></div>'+
+      '<div class="row"><span>散客成为赏景客的基础概率</span><strong>'+Number(outlook.rareChance.toFixed(1))+'%</strong></div>'+
       '<p>环境评分无上限。每级松树 +5、石灯笼 +4、锦鲤池 +6、樱花树 +9、朱红鸟居 +11、庭园石塔 +14、花见休憩亭 +20。石灯邻接客房、松树邻接温泉、锦鲤池邻接餐室时，还会给已通路的设施加分。</p>'+
-      '<p>每天有 5 位基础来客，环境每满 25 分多吸引 1 人，评分越高，稀客到访概率越高。赏景客实际消费是同等项目普通客人的 10 倍，满房时也可能错过。</p></div>';
+      '<p>每天有 5 位基础来客，环境每满 25 分多吸引 1 人，评分越高，稀客到访概率越高。环境达到 150 分才会吸引赏景客，每次最多 2 位。名人入住时，有空余床位才会进行 5% 的同场判定，成功则来 1 位赏景客。赏景客消费仍为普通客人的 10 倍。</p></div>';
     return;
   }
   if(tab==="report"){
     const last=state.history[0];
-    const rows=last ? [["接待／到访",last.guests+"／"+last.demand+" 人"],["营业收入",number(last.income)],["维护费",number(last.cost)],["净收益",(last.income>=last.cost?"+":"")+number(last.income-last.cost)]]:[];
+    const rows=last ? [["接待／到访",last.guests+"／"+last.demand+" 人"],["营业收入",number(last.income)],["维护费",number(last.cost-(last.operations||0))],...(last.operations?[["额外运营成本",number(last.operations)]]:[]),["净收益",(last.income>=last.cost?"+":"")+number(last.income-last.cost)]]:[];
+    if(last?.weather)rows.push(["当日天气",weatherLabel(last.weather)]);
+    if(last?.reviewEvents)rows.push(["游客好评",last.reviewEvents.good+" 条"],["用餐意外差评",last.reviewEvents.bad+" 条"]);
+    if(last&&guestSatisfaction(last)!==null)rows.push(["客户满意度",guestSatisfaction(last)+"%"]);
+    if(last?.celebrity){
+      const celebrity=celebrityBook.find(entry=>entry.id===last.celebrity.id);
+      rows.push(["名人到访",celebrity.name+" · "+(last.celebrity.happy?"满意":"不满意")],
+        ["名人到访加成","+ "+number(last.celebrityBonus)+" 文"],
+        ["下一次营业风评",last.celebrity.happy?"+15%":"−15%"]);
+    }
+    if(last?.wordOfMouth)rows.push(["上次名人风评",(last.wordOfMouth>0?"+":"")+number(last.wordOfMouth)+" 文"]);
+    if(last?.returning)rows.push(["回头客到访",last.returning+" 人"]);
     if(last?.giftIncome)rows.push(["纪念品收入",number(last.giftIncome)+" 文"]);
     if(last?.cinemaIncome)rows.push(["影院收入",number(last.cinemaIncome)+" 文"]);
     for(const [id,income] of Object.entries(last?.streetIncome||{})){
@@ -532,7 +713,7 @@ function renderPanel() {
       ["未能用餐",last.shortage.food+" 人"]
     );
     if(last?.mix) for(const [type, count] of Object.entries(last.mix)) {
-      if(count&&type!=="group"&&(type!=="garden"||!last.outlook)) rows.push([guestTypes[type].name,count+" 人"]);
+      if(count&&type!=="group"&&type!=="celebrity"&&(type!=="garden"||!last.outlook)) rows.push([guestTypes[type].name,count+" 人"]);
     }
     $("content").innerHTML=last?'<div class="report">'+closeSheet+'<b>第 '+last.day+' 日营业报告</b>'+rows.map(([label,value])=>'<div class="row"><span>'+label+'</span><strong>'+value+'</strong></div>').join("")+'<p>'+last.feedback+'</p>'+(last.reviews?.length?'<b>旅客留言</b>'+last.reviews.map(review=>
       '<div class="row"><span>'+guestTypes[review.type].name+'<br>'+review.comment+'</span></div>').join(""):"")+'</div>':'<div class="report">'+closeSheet+'今晚收摊后，账簿会记录客流、收益与评价。</div>';
@@ -541,19 +722,19 @@ function renderPanel() {
   $("content").innerHTML="";
 }
 function select(x,y){
-  if(!inside(x,y)){closeMapMenu();return}
   if(kind==="extend-room"&&cursor&&mode==="ready"){
     const [a,b]=cursor;
     if(!neighbors(a,b).some(([tx,ty])=>tx===x&&ty===y)||!canExtendTo(x,y)){
       note("请选择亮起的相邻空地。");return;
     }
-    if(state.grid[b][a]!=="room"||extensionAt(a,b)!==undefined||state.cash<roomExpansion.cost)return;
+    if(!isLodging(state.grid[b][a])||extensionAt(a,b)!==undefined||state.cash<roomExpansion.cost)return;
     state.roomExtensions[key(x,y)]=key(a,b);
     state.cash-=roomExpansion.cost;
     closeMapMenu();save();refreshWalkers();renderPanel();
     note("双格客房已建成，下一次营业可多接待 "+roomExpansion.capacity+" 人。");
     return;
   }
+  if(!inside(x,y)){closeMapMenu();return}
   const anchor=state.roomExtensions[key(x,y)];
   cursor=anchor===undefined?[x,y]:coords(anchor);
   if(tab){tab="";renderPanel()}
@@ -616,6 +797,21 @@ function guestRoute(stops,approach,bath){
   route.push(...previous.slice(0,-1).reverse(),...approach.slice(0,-1).reverse());
   return {route,soak};
 }
+const optionalStops=["shop","gifts","cinema",...Object.keys(streetServices)];
+function chooseOptionalStops(slots,used,index){
+  const chosen={};
+  for(let offset=0;offset<optionalStops.length&&Object.keys(chosen).length<2;offset++){
+    const id=optionalStops[(index+offset)%optionalStops.length], next=used[id]||0;
+    if(!slots[id][next])continue;
+    chosen[id]=slots[id][next];
+    used[id]=next+1;
+  }
+  return chosen;
+}
+function operatingCosts(income){
+  return Math.round(Math.min(Math.max(income-6000,0),12000)*.18+
+    Math.min(Math.max(income-18000,0),27000)*.35+Math.max(income-45000,0)*.50);
+}
 function begin(){
   const routes=roadRoutes();
   const f=facilities(routes);
@@ -627,65 +823,106 @@ function begin(){
   ]));
   const outlook=environment(f);
   const tourActive=tourBooked();
-  const ordinaryDemand=5+outlook.extraVisitors;
-  const arrivals=Array.from({length:ordinaryDemand},(_,i)=>
-    Math.random()*100<outlook.rareChance?"garden":i%2?"food":"bath");
-  if(tourActive)arrivals.unshift(...Array(tour.size).fill("group"));
+  const yesterday=state.history[0];
+  const previousGuests=yesterday?.day===state.day-1?yesterday.guests-(yesterday.tourGuests||0)-(yesterday.celebrity?1:0):0;
+  let returning=0;
+  for(let i=0;i<previousGuests;i++)if(Math.random()<returnChance())returning++;
+  const weather=dailyWeather();
+  const ordinaryDemand=Math.max(1,5+outlook.extraVisitors+returning+weatherTypes[weather].visitors);
+  const groupSize=tourActive?tour.size:0;
+  const spareBeds=slots.room.length-groupSize;
+  const celebrity=outlook.score>=celebrityEnvironment&&f.bath.length&&spareBeds>0?randomCelebrity():null;
+  const jointVisit=celebrity&&spareBeds>1&&outlook.rareChance>0&&Math.random()<overlapChance;
+  let rareCount=0;
+  const arrivals=Array.from({length:ordinaryDemand},(_,i)=>{
+    const rare=celebrity?jointVisit&&i===0:
+      rareCount<rareGuestLimit&&outlook.rareChance>0&&Math.random()*100<outlook.rareChance;
+    if(rare){rareCount++;return "garden"}
+    return i%2?"food":"bath";
+  });
+  if(celebrity)arrivals.unshift("celebrity");
+  if(tourActive)arrivals.unshift(...Array(groupSize).fill("group"));
   const demand=arrivals.length;
   const rareArrivals=arrivals.filter(type=>type==="garden").length;
   const count=Math.min(demand,slots.room.length);
-  const guests=[];
-  const mix={bath:0,food:0,garden:0,group:0};
+  const guests=[], optionalUsed={};
+  const mix={bath:0,food:0,garden:0,group:0,celebrity:0};
   for(let i=0;i<count;i++){
     const room=slots.room[i];
     const bath=slots.bath[i];
     const food=slots.food[i];
-    const shop=slots.shop[i], gifts=slots.gifts[i], cinema=slots.cinema[i];
-    const streetStops=Object.entries(streetServices).filter(([id])=>slots[id][i]);
     const type=arrivals[i];
+    const preferred=type==="celebrity"&&celebrity.id==="merchant"?"gifts":
+      type==="celebrity"&&celebrity.id==="performer"?"stage":null;
+    const extras=chooseOptionalStops(slots,optionalUsed,preferred?optionalStops.indexOf(preferred):i);
+    const {shop,gifts,cinema}=extras;
+    const streetStops=Object.entries(streetServices).filter(([id])=>extras[id]);
     mix[type]++;
     const landscape=(room.bonus?13:0)+(bath?.bonus?9:0)+(food?.bonus?6:0);
-    const comment=!bath?"可惜没泡到温泉。":!food?"晚饭卖完了，希望能多备些。":
+    const upset=Boolean(food&&Math.random()<(facilityLevel(food.x,food.y)>=4 ? .015 : .045));
+    const reviewEvent=upset?"bad":bath&&food&&Math.random()<.24?"good":null;
+    const celebrityVisit=type==="celebrity"?{id:celebrity.id,happy:!upset&&celebrity.happy({bath,food,outlook,gifts,stage:extras.stage})}:null;
+    const comment=upset?"差评 · 吃完晚饭后肚子不舒服。":celebrityVisit?celebrity.name+"："+(celebrityVisit.happy?"这趟来得值，改天还会来。":"这次没能如愿。原本想"+celebrity.wish+"。"):
+      reviewEvent==="good"?"好评 · 泡汤舒服，晚饭也好吃。":!bath?"可惜没泡到温泉。":!food?"晚饭卖完了，希望能多备些。":
       type==="group"?"这趟带团来泡汤，值了。":
       type==="garden"&&landscape?"庭园真漂亮，还想再来。":
       streetStops.length?streetStops.at(-1)[1].comment:
       cinema?"泡完汤再看场电影，刚刚好。":gifts?"挑了一份纪念品，带回家送人。":
       room.bonus?"夜里有石灯，走路很安心。":bath.bonus?"边泡汤边看松树，真舒服。":
       food.bonus?"吃完饭还能赏鱼，真好。":"泡汤挺舒服，想再看些庭园景色。";
-    const stops=[room,bath,food,shop,gifts,cinema,...streetStops.map(([id])=>slots[id][i])].filter(Boolean);
+    const stops=[room,bath,food,shop,gifts,cinema,...streetStops.map(([id])=>extras[id])].filter(Boolean);
     const visitOrder=i%2===0?[...stops.filter(stop=>stop.y>=bankStart),...stops.filter(stop=>stop.y<bankStart)]:stops;
     const {route,soak}=guestRoute(visitOrder,approach,bath);
-    const baseFee=lodgingFee(facilityLevel(room.x,room.y))+(bath?75:0)+(food?55:0)+(shop?35:0);
+    const baseFee=lodgingFee(room.type,facilityLevel(room.x,room.y))+(bath?75:0)+(food?55:0)+(shop?35:0);
     const multiplier=type==="garden"?10:type==="group"?tour.multiplier:1;
     const giftIncome=gifts?65*multiplier:0, cinemaIncome=cinema?90*multiplier:0;
     const streetIncome=Object.fromEntries(streetStops.map(([id,service])=>[id,service.fee*multiplier]));
     const extra=Object.values(streetIncome).reduce((sum,fee)=>sum+fee,0);
-    guests.push({route,soak,comment,fee:baseFee*multiplier+giftIncome+cinemaIncome+extra,type,giftIncome,cinemaIncome,streetIncome});
+    guests.push({route,soak,comment,reviewEvent,celebrity:celebrityVisit,fee:baseFee*multiplier+giftIncome+cinemaIncome+extra,type,giftIncome,cinemaIncome,streetIncome});
   }
   const cost=state.grid.reduce((sum,row,y)=>sum+row.reduce((subtotal,type,x)=>
     subtotal+(items[type]?.keep||0)+(canUpgrade(type)?extraMaintenance(type,facilityLevel(x,y)):0),0),
     25+Object.keys(state.roomExtensions).length*roomExpansion.keep);
-  run={guests,demand,mix,cost,tour:tourActive,outlook,rareArrivals,baths:slots.bath.length,meals:slots.food.length};
+  const nextMood=yesterday?.day===state.day-1?yesterday.celebrity:null;
+  const reputationRate=nextMood?(nextMood.happy ? .15 : -.15):0;
+  run={guests,demand,mix,cost,weather,reputationRate,returning,tour:tourActive,outlook,rareArrivals,baths:slots.bath.length,meals:slots.food.length};
   clock=0;badgeTick=0;mode="running";kind="";cursor=null;
   save();
-  note("旅馆营业中，客人正在散步、泡汤和逛店。");
+  note(mix.celebrity?celebrity.name+"来访 · 今日营业额 +20%":"旅馆营业中，客人正在散步、泡汤和逛店。");
   renderPanel();
 }
 function finish(){
   const teaTips=run.guests.reduce((sum,g)=>sum+(g.teaTip||0),0);
-  const income=run.guests.reduce((sum,g)=>sum+g.fee,teaTips);
+  const baseIncome=run.guests.reduce((sum,g)=>sum+g.fee,teaTips);
+  const celebrity=run.guests.find(guest=>guest.celebrity)?.celebrity;
+  const celebrityBonus=celebrity?Math.round(baseIncome*.20):0;
+  const wordOfMouth=Math.round(baseIncome*(run.reputationRate||0));
+  const income=baseIncome+celebrityBonus+wordOfMouth;
+  const operations=operatingCosts(income), cost=run.cost+operations;
+  if(celebrity){
+    state.celebrityVisits??={};
+    const prior=state.celebrityVisits[celebrity.id];
+    state.celebrityVisits[celebrity.id]={firstDay:prior?.firstDay??state.day,count:(prior?.count||0)+1,happy:celebrity.happy};
+  }
   const feedback=run.guests.length>run.baths?"有客人没能泡到温泉。可以增加浴池容量。":run.guests.length>run.meals?"晚饭卖完了，几位客人没吃上。":run.guests.length<run.demand?"今日满房。还有旅客因客房不足离开。":"客人顺利入住，给庭园和服务留下了评价。";
   const shortage={room:run.demand-run.guests.length,bath:Math.max(0,run.guests.length-run.baths),food:Math.max(0,run.guests.length-run.meals)};
   const incomeByType=type=>run.guests.reduce((sum,guest)=>sum+(guest.type===type?guest.fee:0),0);
   state.history.unshift({
+    weather:run.weather||state.weather,
+    reviewEvents:{
+      good:run.guests.filter(guest=>guest.reviewEvent==="good").length,
+      bad:run.guests.filter(guest=>guest.reviewEvent==="bad").length
+    },
+    celebrity,celebrityBonus,wordOfMouth,returning:run.returning||0,
     streetIncome:Object.fromEntries(Object.keys(streetServices).map(id=>[id,run.guests.reduce((sum,g)=>sum+(g.streetIncome?.[id]||0),0)])),
     giftIncome:run.guests.reduce((sum,g)=>sum+(g.giftIncome||0),0),
     cinemaIncome:run.guests.reduce((sum,g)=>sum+(g.cinemaIncome||0),0),
-    tourGuests:run.mix.group,tourIncome:incomeByType("group"),rareIncome:incomeByType("garden"),day:state.day,guests:run.guests.length,demand:run.demand,income,cost:run.cost,feedback,mix:run.mix,shortage,outlook:run.outlook,rareArrivals:run.rareArrivals,
+    tourGuests:run.mix.group,tourIncome:incomeByType("group"),rareIncome:incomeByType("garden"),day:state.day,guests:run.guests.length,demand:run.demand,income,cost,operations,feedback,mix:run.mix,shortage,outlook:run.outlook,rareArrivals:run.rareArrivals,
     reviews:run.guests.map(({type,comment})=>({type,comment}))});
   state.history=state.history.slice(0,30);
-  state.cash+=income-run.cost;
-  mode="closed";tab="";closeMapMenu();save();renderPanel();note("今日营业结束。下一日开始前可以扩建。");
+  settleRanking();
+  state.cash+=income-cost;
+  mode="closed";tab="";closeMapMenu();save();renderPanel();note(state.day%monthLength===0?"月榜已更新 · 松间温泉第 "+state.ranking.place+" 名。":"今日营业结束。下一日开始前可以扩建。");
 }
 $("content").addEventListener("click",e=>{
   if(e.target.closest("#close-sheet")){tab="";renderPanel();return}
@@ -748,10 +985,95 @@ document.querySelectorAll("[data-tab]").forEach(btn=>btn.onclick=()=>{
 });
 $("open").onclick=()=>{
   closeMapMenu();
-  if(mode==="ready")begin();
+  if(mode==="ready"){begin();if(mode==="running")playChime()}
   else if(mode==="closed"){state.day++;mode="ready";tab="";run=null;save();renderPanel();note("新一天开始。可以调整布局，或直接开门营业。");showTourOffer()}
 };
-$("help").onclick=()=>$("manual").showModal();$("close-help").onclick=()=>$("manual").close();
+const volumeKey=SAVE+"-volume";
+let volume=50,audioContext;
+try{
+  const stored=localStorage.getItem(volumeKey);
+  if(stored!==null&&Number.isFinite(Number(stored)))volume=Math.max(0,Math.min(100,Number(stored)));
+}catch{}
+function playChime(){
+  if(volume===0)return;
+  const Audio=window.AudioContext||window.webkitAudioContext;
+  if(!Audio)return;
+  try{
+    audioContext??=new Audio();
+    audioContext.resume().catch(()=>{});
+    const now=audioContext.currentTime;
+    for(const [i,hz] of [523.25,659.25,783.99].entries()){
+      const start=now+i*.055, oscillator=audioContext.createOscillator(), gain=audioContext.createGain();
+      oscillator.frequency.value=hz;
+      gain.gain.setValueAtTime(.0001,start);
+      gain.gain.exponentialRampToValueAtTime(.12*volume/100,start+.022);
+      gain.gain.exponentialRampToValueAtTime(.0001,start+.25);
+      oscillator.connect(gain).connect(audioContext.destination);
+      oscillator.start(start);oscillator.stop(start+.26);
+    }
+  }catch{}
+}
+function showVolume(){
+  $("volume").value=volume;
+  $("volume-value").textContent=volume+"%";
+}
+$("settings-open").onclick=()=>{
+  showVolume();
+  $("settings-status").textContent="";
+  $("settings").showModal();
+};
+$("settings-close").onclick=()=>$("settings").close();
+$("volume").oninput=()=>{
+  volume=Number($("volume").value);
+  showVolume();
+  try{localStorage.setItem(volumeKey,String(volume))}catch{}
+};
+$("volume").onchange=playChime;
+$("preview-sound").onclick=playChime;
+$("save-now").onclick=()=>{
+  const saved=save();
+  $("settings-status").textContent=saved?"当前进度已保存。":"保存失败，可以先导出备份。";
+  if(saved)playChime();
+};
+$("export-save").onclick=()=>{
+  save();
+  const file=new Blob([JSON.stringify({format:SAVE,state},null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(file), link=document.createElement("a");
+  link.href=url;link.download="松间温泉-第"+state.day+"日.json";
+  link.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  $("settings-status").textContent="已生成存档备份。";
+};
+$("import-save").onclick=()=>$("save-file").click();
+$("save-file").onchange=async event=>{
+  const input=event.currentTarget, file=input.files[0];
+  input.value="";
+  if(!file)return;
+  try{
+    if(file.size>8*1024*1024)throw new Error();
+    const backup=JSON.parse(await file.text()), data=backup.state;
+    const grid=data?.grid;
+    if(backup.format!==SAVE||!Array.isArray(grid)||grid.length<BASE_HEIGHT||grid.length>40||
+      ![8,11,15,20].includes(grid[0]?.length)||
+      !grid.every(row=>Array.isArray(row)&&row.length===grid[0].length&&row.every(type=>type===""||Object.hasOwn(items,type)))||
+      !Number.isInteger(data.day)||data.day<1||!Number.isFinite(data.cash)||!Array.isArray(data.history)||
+      JSON.stringify(data).includes("<"))throw new Error();
+    if(!window.confirm("导入第 "+data.day+" 日的存档会覆盖当前进度。确定导入？"))return;
+    localStorage.setItem(SAVE,JSON.stringify(data));
+    replacingSave=true;
+    location.reload();
+  }catch{
+    $("settings-status").textContent="导入失败，请选择有效的松间温泉存档。";
+  }
+};
+$("help").onclick=()=>{
+  $("settings").close();
+  $("manual").showModal();
+};
+$("close-help").onclick=()=>{
+  $("manual").close();
+  $("settings").showModal();
+};
 
 let mapScale=1.78, mapOffsetX=0, mapOffsetY=0;
 let closeView=true, panX=0, panY=0;
@@ -797,7 +1119,7 @@ $("camera-toggle").onclick=()=>{
   closeView=!closeView;
   panX=panY=0;
   updateCamera();
-  closeMapMenu();
+  if(kind!=="extend-room")closeMapMenu();
   $("camera-toggle").textContent=closeView?"全景":"近景";
 };
 let viewX=0,viewY=0;
@@ -843,9 +1165,13 @@ function drawBather(x,y,type,index){
   rect(x-1,y-8-bob,3,1,shine);
   rect(x-2,y-5-bob,5,3,skin);
   rect(x+1,y-4-bob,1,1,"#51403b");
+  rect(x-1,y-3-bob,1,1,"#d38b7b");
+  if(type==="bath"){rect(x-3,y-9-bob,6,2,"#f7e8c4");rect(x-2,y-10-bob,4,1,"#fff7da")}
+  if(type==="food")rect(x-2,y-8-bob,1,2,"#d88486");
   rect(x-4,y,9,1,"#8ad0c0");
   const wave=(Math.floor(sceneryTime/210)+index)%4;
   rect(x-4-wave,y+2,3+wave,1,"#b1dec9");
+  rect(x+3,y+3,2+wave,1,"#a2d8c7");
   if(type==="garden")rect(x-2,y-9-bob,5,1,"#f6d58b");
 }
 function building(x,y,k,width=24,depth=24,level=1,facade="original",bathers=[]){
@@ -912,12 +1238,17 @@ function building(x,y,k,width=24,depth=24,level=1,facade="original",bathers=[]){
   }
   const style=facade!=="original"?facilityStyles[facade]:{
     room:{wall:"#f4d9a6",shade:"#d0a274",roof:"#527e77",light:"#83a498",cloth:"#427d72"},
+    machiya:{wall:"#d8a67e",shade:"#ab7757",roof:"#9d6150",light:"#c38766",cloth:"#ba6a58"},
+    kura:{wall:"#f0ead9",shade:"#bebcad",roof:"#505964",light:"#89929a",cloth:"#5c687b"},
+    towerInn:{wall:"#efce9b",shade:"#bd9a75",roof:"#487777",light:"#8fb1a1",cloth:"#5e8a7c"},
     food:{wall:"#f4c6a1",shade:"#cc9272",roof:"#a75e56",light:"#d68d73",cloth:"#a3504d"},
     shop:{wall:"#dedcb3",shade:"#aeb491",roof:"#577388",light:"#8ba4ad",cloth:"#506f92"},
     gifts:{wall:"#f2d2ba",shade:"#c39782",roof:"#8f596c",light:"#c98a94",cloth:"#a84f6c"},
     dango:{wall:"#f4d6ae",shade:"#bc9374",roof:"#ad6b4a",light:"#dca575",cloth:"#b85e55"},
     teaHouse:{wall:"#e1e3bf",shade:"#a3ae84",roof:"#537865",light:"#90ac7c",cloth:"#638959"},
     arcade:{wall:"#f4d1af",shade:"#be9486",roof:"#855877",light:"#c58ea4",cloth:"#b36d83"},
+    buffet:{wall:"#f0c797",shade:"#c88e65",roof:"#99564d",light:"#d08768",cloth:"#ad5551"},
+    stage:{wall:"#e1c2ab",shade:"#b88b81",roof:"#554c68",light:"#89768f",cloth:"#a35263"},
     cinema:{wall:"#d7d7e7",shade:"#a49bb7",roof:"#505477",light:"#7f81a7",cloth:"#806da3"}
   }[k];
   const point=(u,v,z=0)=>[x+u-v,y-13+Math.round((u+v)*.56)-z];
@@ -930,6 +1261,8 @@ function building(x,y,k,width=24,depth=24,level=1,facade="original",bathers=[]){
     front(u,v,z,w,6,wood);front(u+1,v,z+1,w-2,4,"#ebcc8e");
     front(u+Math.floor(w/2),v,z+1,1,4,"#937450");
     front(u+1,v,z+3,w-2,1,"#b69766");
+    front(u+1,v,z+4,w-2,1,"#f7dfaa");
+    front(u-1,v,z-1,w+2,1,"#9a7254");
   };
   const roof=(u,v,w,d,z,rise)=>{
     const over=2, start=u-over, end=u+w+over, back=v-over, edge=v+d+over, ridge=v+d/2;
@@ -944,7 +1277,11 @@ function building(x,y,k,width=24,depth=24,level=1,facade="original",bathers=[]){
       const t=n/4, dv=(edge-ridge)*t, dz=rise*(1-t);
       front(start,ridge+dv,z+dz,end-start,.65,highlight);
     }
+    for(let a=start+2;a<end;a+=3){
+      face([[a,ridge,z+rise],[a+.55,ridge,z+rise],[a+.55,edge,z],[a,edge,z]],"#352f3d25");
+    }
     front(start,edge,z-1,end-start,2,rim);
+    front(start+1,edge,z+1,end-start-2,.65,highlight);
     front(start,ridge,z+rise,end-start,1,gold?"#ffe0a0":highlight);
     if(level>=3){
       side(end,back,z,edge-back,1,rim);
@@ -962,6 +1299,15 @@ function building(x,y,k,width=24,depth=24,level=1,facade="original",bathers=[]){
       side(u+w,a,z+4,5,6,wood);side(u+w,a+1,z+5,3,4,"#e3bd80");
       side(u+w,a+2,z+5,1,4,"#a17c55");
     }
+    if(base&&k==="machiya"){
+      for(let a=u+2;a<u+w-2;a+=2)front(a,edge,z+2,1,h-3,"#86563e");
+      floor(u-1,edge,w+2,4,z+h-1,style.roof);
+    }
+    if(base&&k==="kura"){
+      front(u,edge,z,w,4,"#71777a");side(u+w,v,z,d,4,"#676b70");
+      for(let a=u+2;a<u+w;a+=4)front(a,edge,z+1,1,2,"#aeb0aa");
+      front(u,edge,z+h-2,w,1,"#aaa49a");
+    }
     if(base){
       const door=u+Math.floor((w-6)/2);
       front(door,edge,z,6,h-2,wood);front(door+1,edge,z+1,4,h-4,"#a87652");
@@ -970,7 +1316,7 @@ function building(x,y,k,width=24,depth=24,level=1,facade="original",bathers=[]){
         floor(door-2,edge,10,3,z+h-3,style.roof);
         front(door-2,edge+3,z+h-4,10,1,dark);
         for(const dx of [0,3])front(door+dx,edge,z+h-7,3,3,style.cloth);
-        if(k!=="room")front(door,edge,z+h-1,6,2,"#f0c882");
+        if(!isLodging(k))front(door,edge,z+h-1,6,2,"#f0c882");
       }
     }else if(level>=5){
       floor(u-1,edge,w+2,3,z+1,"#ac805a");
@@ -981,15 +1327,15 @@ function building(x,y,k,width=24,depth=24,level=1,facade="original",bathers=[]){
   const w=width-6,d=depth-6;
   floor(1,1,width-2,depth-2,-2,"#7f896d");
   floor(2,2,width-4,depth-4,0,"#c3b18c");
-  const baseHeight=level===1?11:level<=3?13:12;
+  const baseHeight=k==="kura"?15:k==="machiya"?10:level===1?11:level<=3?13:12;
   story(3,3,w,d,0,baseHeight,true);
-  roof(3,3,w,d,baseHeight,level===1?4:level===2?5:7);
-  if(level>=4){
+  roof(3,3,w,d,baseHeight,k==="kura"?8:k==="machiya"?4:level===1?4:level===2?5:7);
+  if(level>=4||k==="towerInn"){
     const upper=baseHeight+3;
     story(6,6,w-6,d-6,upper,9,false);
     roof(6,6,w-6,d-6,upper+9,level===4?4:5);
   }
-  if(level===6){
+  if(level===6||k==="towerInn"&&level>=4){
     const top=baseHeight+15;
     story(8,8,w-10,d-10,top,7,false);
     roof(8,8,w-10,d-10,top+7,5);
@@ -1018,6 +1364,14 @@ function building(x,y,k,width=24,depth=24,level=1,facade="original",bathers=[]){
       }
     }
   }
+  if(k==="buffet"||k==="stage"){
+    const edge=depth-3;
+    front(4,edge,5,width-8,4,k==="stage"?"#9d5062":"#ab6745");
+    for(let u=5;u<width-4;u+=4){
+      front(u,edge,5,2,3,"#f7d28a");
+      front(u,edge,6,1,1,"#ffefd0");
+    }
+  }
   if(k==="cinema"){
     const [sx,sy]=point(width/2,depth-3,9);
     rect(sx-9,sy-4,19,7,"#554451");rect(sx-8,sy-3,17,5,"#f6d18c");
@@ -1035,11 +1389,16 @@ function gardenStone(x,y,size=1){
   shape([[-8,-5],[-5,-7],[0,-7],[-2,-5]],"#c6c8a9");
 }
 function resortLantern(x,y){
+  if(mode==="closed"||mode==="running"&&clock>=businessDuration*.67){
+    diamond(x,y+2,12,5,"#e9b76c43");
+    diamond(x,y-11,11,8,"#f4bb6a24");
+    diamond(x,y-11,7,5,"#f6d18030");
+  }
   diamond(x,y+2,6,3,"#7e9870");
   rect(x-1,y-12,3,14,"#695c4a");
   rect(x-4,y-15,9,8,"#755748");
   rect(x-3,y-14,7,5,"#ffdc83");
-  rect(x,y-14,1,5,"#bd8651");
+  rect(x,y-14,1,5,"#bd8651");rect(x-2,y-13,2,3,"#fff0b1");
   rect(x-5,y-17,11,2,"#546568");
   rect(x-3,y-19,7,2,"#6c8480");
 }
@@ -1202,7 +1561,8 @@ function ground(){
   const ribbon=(upper,lower,color)=>poly([
     ...river.map(([x,y])=>[x,y+upper]),...river.slice().reverse().map(([x,y])=>[x,y+lower])
   ],color);
-  ribbon(-15,17,"#849d7d");ribbon(-11,13,"#477f7d");ribbon(-7,9,"#69a9a2");
+  ribbon(-16,18,"#849d7d");ribbon(-13,15,"#b8b491");ribbon(-11,13,"#477f7d");
+  ribbon(-7,9,"#69a9a2");ribbon(-2,5,"#75b3aa");
   for(let i=0;i<river.length-1;i++){
     const [x,y]=river[i], [nx,ny]=river[i+1];
     for(let j=0;j<5;j++){
@@ -1298,19 +1658,30 @@ const travelerStyles={
   food:{hair:"#563630",shine:"#925c44",coat:"#c55b64",trim:"#ffc3ad",skin:"#f4c9a2"},
   group:{hair:"#392b30",shine:"#805449",coat:"#806eb0",trim:"#f3c6a0",skin:"#eec098"},
   garden:{hair:"#38302f",shine:"#745744",coat:"#a47a43",trim:"#ffe395",skin:"#dca57c"},
+  celebrity:{hair:"#423334",shine:"#9b705c",coat:"#ad6450",trim:"#f4d695",skin:"#efc8a5"},
   staff:{hair:"#43362c",shine:"#70543f",coat:"#5b8b70",trim:"#f3e7bd",skin:"#ecc198"}
 };
-function person(x,y,type,step,facing=1,back=false){
+function person(x,y,type,step,facing=1,back=false,variant=0){
   const {hair,shine,coat,trim,skin}=travelerStyles[type];
   const swing=[0,1,0,-1][step%4], ink="#393237";
-  rect(x-6,y-1,12,3,"#45635155");
+  diamond(x,y+1,7,2,"#34473840");
   ctx.save();ctx.translate(Math.round(x),Math.round(y));ctx.scale(facing,1);
-  rect(-4,-5+swing,3,5,ink);rect(1,-5-swing,3,5,ink);
-  rect(-5,-1+swing,4,2,"#5c4541");rect(1,-1-swing,4,2,"#5c4541");
+  for(const [leg,phase] of [[-4,swing],[1,-swing]]){
+    rect(leg,-5+phase,3,5,ink);
+    rect(leg,-4+phase,1,2,"#6b5860");
+    rect(leg,-1+phase,4,2,"#5c4541");
+    rect(leg,phase,4,1,"#997763");
+  }
   ctx.translate(0,-Math.abs(swing));
   rect(-5,-11,10,7,ink);rect(-4,-11,8,6,coat);
-  rect(-3,-9,6,1,trim);rect(-4,-6,8,1,"#433944");
+  rect(-4,-10,2,4,"#fff2d630");
+  rect(-4,-6,8,1,"#433944");
+  if(back)rect(-3,-10,6,1,trim);
+  else{
+    rect(-2,-11,4,1,trim);rect(-1,-10,3,1,trim);rect(0,-9,2,1,trim);
+  }
   rect(-6,-10-swing,3,4,coat);rect(4,-10+swing,3,4,coat);
+  rect(-6,-8-swing,2,1,trim);rect(5,-8+swing,2,1,trim);
   rect(-6,-7-swing,2,2,skin);rect(5,-7+swing,2,2,skin);
   rect(-4,-22,8,2,ink);rect(-6,-20,12,9,ink);rect(-4,-11,8,1,ink);
   rect(-5,-20,10,8,hair);rect(-3,-21,6,2,shine);rect(-5,-19,4,2,shine);
@@ -1318,13 +1689,38 @@ function person(x,y,type,step,facing=1,back=false){
     rect(-3,-17,8,5,skin);rect(-2,-12,6,1,skin);
     rect(-4,-17,2,3,hair);rect(-2,-18,4,1,hair);
     rect(0,-16,1,2,ink);rect(4,-16,1,2,ink);
-    rect(3,-13,1,1,"#b97065");
+    rect(-2,-14,2,1,"#d99080");rect(3,-13,1,1,"#ad6b61");
+  }else{
+    rect(-4,-16,2,3,shine);rect(2,-14,2,2,"#ffffff18");
   }
-  if(type==="food")rect(-5,-18,2,2,"#e98792");
+  if(type==="bath"){
+    rect(-5,-7,4,4,"#e8d9ab");rect(-4,-7,3,1,"#fff3ca");
+    rect(-5,-4,4,1,"#ac986f");
+  }
+  if(type==="food"){
+    rect(-5,-18,2,2,variant%2?"#f4c575":"#e98792");
+    rect(5,-6+swing,4,5,"#a76a4b");rect(6,-5+swing,3,3,"#dfad71");
+    rect(6,-7+swing,2,1,"#f1cb94");
+  }
+  if(type==="group"){
+    rect(-6,-21,12,2,"#574a71");rect(-4,-23,8,2,"#a894c8");
+    rect(-4,-21,8,1,"#d8c0dc");
+    if(back){
+      rect(-3,-10,6,5,"#53475e");rect(-2,-9,4,3,"#a88c78");
+    }else rect(2,-9,2,2,"#fff0ab");
+  }
   if(type==="garden"){
     rect(-6,-21,12,2,"#977243");rect(-4,-23,8,2,"#dec27b");rect(-4,-21,8,1,trim);
+    rect(5,-7+swing,3,5,"#765341");rect(6,-7+swing,1,3,"#f1cc83");
   }
-  if(type==="staff"){rect(-5,-21,10,2,trim);rect(-4,-22,8,1,"#fff0c2")}
+  if(type==="celebrity"){
+    rect(-5,-20,2,3,"#e2b969");rect(-5,-19,1,1,"#fff0ba");
+    rect(3,-10,1,4,"#f6d999");rect(4,-8,1,2,"#e6b763");
+  }
+  if(type==="staff"){
+    rect(-5,-21,10,2,trim);rect(-4,-22,8,1,"#fff0c2");
+    if(!back)rect(-3,-8,5,3,"#e6d9ad");
+  }
   ctx.restore();
 }
 function showGuestBubble(review){
@@ -1395,9 +1791,56 @@ function refreshWalkers(){
     walkingRoutes.push(route.slice(-7));
   }
 }
-function drawWater(x,y){
+function drawRoad(x,y,type,seed=0){
+  const at=(u,v)=>[x+u-v,y-13+(u+v)*.54];
+  const patch=(u,v,w,d,color)=>poly([at(u,v),at(u+w,v),at(u+w,v+d),at(u,v+d)],color);
+  if(type==="boardwalk"){
+    diamond(x,y,24,13,"#835d4c");
+    for(let v=0;v<24;v+=3){
+      patch(1,v,22,2.6,(v/3+seed)%3?"#bc9165":"#d1a779");
+      patch(2,v+.25,20,.45,"#e1b787");
+      const [px,py]=at(5+(v*7+seed)%10,v+1);
+      rect(px,py,3,1,"#9e7354");
+      for(const u of [2,21]){
+        const [nailX,nailY]=at(u,v+1);
+        rect(nailX,nailY,1,1,"#725748");
+      }
+    }
+    return;
+  }
+  if(type==="cobble"){
+    diamond(x,y,24,13,"#969b8b");
+    const stones=["#c2c2ae","#aeb8aa","#ddd0b7","#bdc2b3"];
+    for(let u=2;u<23;u+=4)for(let v=2;v<23;v+=4){
+      const [px,py]=at(u,v);
+      const color=stones[(u+v/4+seed)%stones.length|0];
+      rect(px-2,py,5,2,"#888e82");
+      rect(px-2,py-1,4,2,color);
+      rect(px-1,py-2,2,1,"#e1d8c2");
+    }
+    return;
+  }
+  diamond(x,y,24,13,"#c4c1a5");
+  for(let u=0;u<24;u+=6)for(let v=0;v<24;v+=6){
+    patch(u+.25,v+.25,5.5,5.5,(u/6+v/6+seed)%2?"#e2ddc2":"#eee6cb");
+    if((u+v+seed)%5===0){
+      const [px,py]=at(u+3,v+3);
+      rect(px,py,2,1,"#d5cbb0");
+    }
+  }
+}
+function drawWater(x,y,edges=[]){
   diamond(x,y+2,25,14,"#668f81");diamond(x,y,25,14,"#589d98");
-  diamond(x,y,20,10,"#70b7ab");
+  diamond(x,y,20,10,"#70b7ab");diamond(x-1,y-1,14,6,"#7bbfb2");
+  const corners=[[x,y-13],[x+24,y],[x,y+13],[x-24,y]];
+  for(const edge of edges){
+    const [a,b]=corners[edge],[c,d]=corners[(edge+1)%4];
+    for(let i=1;i<6;i++){
+      const px=a+(c-a)*i/6,py=b+(d-b)*i/6;
+      rect(px-2,py,5,2,"#728c78");
+      rect(px-1,py-1,3,1,i%2?"#c7c0a2":"#b0b49b");
+    }
+  }
   for(let i=0;i<4;i++){
     const drift=(Math.floor(sceneryTime/210)+i*4)%12;
     rect(x-14+drift+i*4,y-4+i%3*4,4+i%2,1,"#b0daca");
@@ -1423,6 +1866,21 @@ function drawAnimal(x,y,id,host,level){
 }
 function drawGarden(x,y,type,level){
   const gold="#f5cf77";
+  if(type==="moonGarden"){
+    diamond(x,y+2,24,13,"#9a9d80");diamond(x,y,21,10,"#4d8884");diamond(x,y-1,17,7,"#78b3a8");
+    const moon="#f4d994";
+    for(let i=0;i<5;i++)rect(x-8+i*4,y-2+(i%2),2+Math.floor(sceneryTime/230+i)%3,1,"#bbd8b1");
+    gardenStone(x-17,y+5,.45);
+    if(level>=2)gardenStone(x+16,y+5,.5);
+    if(level>=3){resortLantern(x-17,y+5);resortLantern(x+17,y+5)}
+    if(level>=4){
+      rect(x-9,y-20,3,18,"#805949");rect(x+7,y-20,3,18,"#805949");
+      rect(x-7,y-24,15,4,level===6?moon:"#637c6f");
+      rect(x-10,y-22,3,4,"#ac8259");rect(x+7,y-22,3,4,"#ac8259");
+    }
+    if(level>=5)blossom(x+14,y+3,.38);
+    return;
+  }
   if(type==="pavilion"){
     const roof=level===6?"#d9ae65":level>=2?"#577e72":"#966e56";
     diamond(x,y+4,19,8,"#859d78");diamond(x,y+3,16,6,"#d4b890");
@@ -1560,29 +2018,11 @@ function draw(){
       rect(a-2,b-6,5,3,"#9b9b80");
       continue;
     }
-    if(tile==="cobble"){
-      diamond(a,b,24,13,"#adac9a");
-      for(let u=0;u<6;u++)for(let v=0;v<5;v++){
-        const px=a+(u-v)*4-2, py=b-10+(u+v)*2.1;
-        const color=["#d4cbbb","#b9beb3","#e4d7c3"][(u+v*2+x+y)%3];
-        rect(px,py,4,2,color);rect(px+1,py-1,2,1,color);
-      }
-    }else if(tile==="boardwalk"){
-      diamond(a,b,24,13,"#99704f");
-      const plank=(u,v)=>[a+u-v,b-12+(u+v)*.52];
-      for(let v=0;v<24;v+=4){
-        poly([plank(1,v),plank(23,v),plank(23,v+3),plank(1,v+3)],v%8?"#bc9569":"#d3ad7d");
-        const [px,py]=plank(3,v+1);
-        rect(px,py,1,1,"#785d49");
-      }
+    if(isRoad(tile)){
+      drawRoad(a,b,tile,x+y);
     }else if(tile==="water"){
-      drawWater(a,b);
-    }else if(tile==="path"||tile==="gate"){
-      diamond(a,b,24,13,"#d6d4bc");
-      for(let u=0;u<4;u++)for(let v=0;v<4;v++){
-        const px=a+(u-v)*6,py=b-10+(u+v)*3.25;
-        diamond(px,py,6,3.1,(u+v+x+y)%2?"#e7e4ce":"#eeebd5");
-      }
+      const sides=[[x,y-1],[x+1,y],[x,y+1],[x-1,y]];
+      drawWater(a,b,sides.flatMap(([nx,ny],edge)=>inside(nx,ny)&&state.grid[ny][nx]==="water"?[]:[edge]));
     }else{
       rect(a-11,b+4,3,2,"#78a066");
       rect(a+10,b-3,3,1,"#c9d092");
@@ -1595,13 +2035,34 @@ function draw(){
       ctx.strokeStyle="#fff2ad";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(a,b-13);
       ctx.lineTo(a+24,b);ctx.lineTo(a,b+13);ctx.lineTo(a-24,b);ctx.closePath();ctx.stroke();
     }
+    if(buildPreview?.x===x&&buildPreview.y===y){
+      const preview=buildPreview;
+      const color=preview.warning?"#ba8057":"#5c9b74";
+      diamond(a,b,24,13,preview.warning?"#e2bd89":"#bcd99e");
+      if(preview.access&&Math.abs(preview.access[1]-y)<=1){
+        const [px,py]=pos(...preview.access);
+        if(Math.hypot(px-a,py-b)<35){
+          for(let i=1;i<=4;i++)diamond(a+(px-a)*i/5,b+(py-b)*i/5,2,1,color);
+        }
+      }
+      layers.push({y:b,paint:()=>{
+        ctx.save();
+        ctx.globalAlpha=.78;
+        if(preview.type==="gate")riversideGate(a,b);
+        else if(preview.type==="water")drawWater(a,b,[0,1,2,3]);
+        else if(isRoad(preview.type))drawRoad(a,b,preview.type,x+y);
+        else if(sceneryPoints[preview.type])drawGarden(a,b,preview.type,1);
+        else building(a,b,preview.type);
+        ctx.restore();
+      }});
+    }
     if(tile==="gate"){
       const alongX=neighbors(x,y).filter(([nx,ny])=>ny===y&&isRoad(state.grid[ny][nx])).length;
       const alongY=neighbors(x,y).filter(([nx,ny])=>nx===x&&isRoad(state.grid[ny][nx])).length;
       layers.push({y:b,paint:()=>riversideGate(a,b,facilityLevel(x,y),alongX>alongY?-.56:.56)});
     }
     if(!tile||isRoad(tile))continue;
-    const extension=tile==="room"?extensionAt(x,y):undefined;
+    const extension=isLodging(tile)?extensionAt(x,y):undefined;
     const [tx,ty]=extension===undefined?[x,y]:coords(extension);
     const [ox,oy]=pos(Math.min(x,tx),Math.min(y,ty));
     layers.push({y:Math.max(b,pos(tx,ty)[1]),paint:()=>{
@@ -1638,7 +2099,7 @@ function draw(){
       rect(ex+side*18-1,ey-15,3,5,"#ffce76");
     }
   }});
-  const stride=Math.floor(sceneryTime/155);
+  const stride=Math.floor(sceneryTime/175);
   let review=null;
   if(mode==="running")run.guests.forEach((g,i)=>{
     const group=g.type==="group";
@@ -1673,7 +2134,11 @@ function draw(){
           rect(x+Math.cos(angle)*12,y-10+Math.sin(angle)*11,2,2,i%2?"#fff0ae":"#f8c553");
         }
       }
-      person(x,y,g.type,stride+i,facing,back);
+      person(x,y,g.type,stride+i,facing,back,i);
+      if(g.type==="celebrity"){
+        diamond(x,y-29,6,5,"#704747");diamond(x,y-29,4,3,"#f4cf87");
+        rect(x-1,y-31,2,4,"#a7654e");
+      }
       if(g.type==="garden"){
         rect(x-1,y-32,3,7,"#e8b34a");
         rect(x-3,y-30,7,3,"#e8b34a");
@@ -1691,6 +2156,11 @@ function draw(){
     layers.push({y,paint:()=>person(x+(i%2?2:-2),y,i===0?"staff":i%2?"food":"bath",stride+i,facing,back)});
   });
   layers.sort((a,b)=>a.y-b.y).forEach(layer=>layer.paint());
+  if(mode==="closed"||mode==="running"&&clock>=businessDuration*.67){
+    ctx.save();ctx.setTransform(1,0,0,1,0,0);
+    rect(0,0,canvas.width,canvas.height,"#393f6620");
+    ctx.restore();
+  }
   if(state.acrossRiver){
     const evening=mode==="closed"||mode==="running"&&clock>=18000;
     for(const area of bankDistricts.filter(area=>state[area.id])){
@@ -1705,6 +2175,18 @@ function draw(){
     }
   }
   ctx.restore();
+  if(state.weather==="rain"){
+    ctx.strokeStyle="#cfedf0a0";ctx.lineWidth=1;
+    ctx.beginPath();
+    for(let i=0;i<55;i++){
+      const x=(i*73+Math.floor(sceneryTime/34))%canvas.width;
+      const y=(i*127+sceneryTime*.42)%canvas.height;
+      ctx.moveTo(x,y);ctx.lineTo(x-3,y+8);
+    }
+    ctx.stroke();
+  }else if(state.weather==="mist"){
+    rect(0,0,canvas.width,canvas.height,"#e6ecdc22");
+  }
   showGuestBubble(review);
 }
 let drag=null, suppressClick=false;
@@ -1721,7 +2203,7 @@ canvas.addEventListener("pointermove",e=>{
     drag.moved=true;
     canvas.setPointerCapture(e.pointerId);
     canvas.classList.add("dragging");
-    closeMapMenu();
+    if(kind!=="extend-room")closeMapMenu();
   }
   const r=canvas.getBoundingClientRect();
   const horizontalReach=320+Math.max(0,W-BASE_WIDTH)*25*mapScale;
@@ -1747,7 +2229,7 @@ canvas.addEventListener("click",e=>{
     if(by>=bankStart&&inside(bx,by)){select(bx,by);return}
   }
   const tx=Math.round((b+a)/2),ty=Math.round((b-a)/2);
-  if(ty<bankStart)select(tx,ty);
+  if(ty<bankStart||kind==="extend-room")select(tx,ty);
   else closeMapMenu();
 });
 canvas.addEventListener("keydown",e=>{
