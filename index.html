@@ -88,6 +88,7 @@ const canvas = $("map"), ctx = canvas.getContext("2d");
 const BASE_WIDTH = 8, BASE_HEIGHT = 7, entrance = [3, 6], SAVE = "pine-onsen-v01";
 const items = {
   path:{name:"石板路", cost:35, keep:0, detail:"连接入口和设施。"},
+  gate:{name:"通行牌坊",cost:420,keep:6,detail:"跨在路上的日式牌坊。游客可从门下经过，每级增加 15 点环境评分。"},
   water:{name:"水路",cost:140,keep:2,detail:"相邻水路会连成池塘，每格环境 +2。建好后可点水面放养鱼类，游客走陆路。"},
   cobble:{name:"鹅卵石路",cost:45,keep:0,detail:"圆石庭园小径，可与其他道路相连。"},
   boardwalk:{name:"木栈道",cost:55,keep:0,detail:"暖色木板步道，可与其他道路相连。"},
@@ -108,7 +109,7 @@ const items = {
   torii:{name:"朱红鸟居",cost:360,keep:6,detail:"每级增加 11 点环境评分。"},
   pagoda:{name:"庭园石塔",cost:520,keep:8,detail:"每级增加 14 点环境评分。"}
 };
-const roadTypes=["path","cobble","boardwalk"];
+const roadTypes=["path","cobble","boardwalk","gate"];
 const isRoad=type=>roadTypes.includes(type);
 const facilityStyles={
   original:{name:"松间原木"},
@@ -133,7 +134,7 @@ const buildCategories=[
   {id:"lodging",name:"住宿",items:["room"]},
   {id:"services",name:"服务",items:["bath","food","shop","gifts","cinema"]},
   {id:"street",name:"温泉街",items:[...Object.keys(streetServices),"gifts","cinema","pavilion"]},
-  {id:"garden",name:"庭园",items:["pine","lamp","pond","cherry","torii","pagoda","pavilion"]},
+  {id:"garden",name:"庭园",items:["pine","lamp","pond","cherry","torii","pagoda","pavilion","gate"]},
   {id:"animals",name:"动物",items:[]}
 ];
 function fresh() {
@@ -203,10 +204,11 @@ const key = (x,y) => y>=BASE_HEIGHT?1000+y*32+x:
 const capacityByType={room:[2,3,4,5,6,8],bath:[4,6,8,10,12,15],food:[3,5,7,9,11,14],shop:[4,6,8,10,12,15],gifts:[4,6,8,10,13,16],cinema:[5,7,10,13,16,20],dango:[5,7,9,12,15,18],teaHouse:[4,6,8,11,14,18],arcade:[5,8,11,14,18,22]};
 const tierNames=["初建","整修","雅致","精品","名物","地标"];
 const tierColors=["#c49d68","#bf905c","#668f83","#7286a5","#a67385","#ca9a53"];
-const sceneryPoints={pine:5,lamp:4,pond:6,cherry:9,torii:11,pagoda:14,pavilion:20};
+const sceneryPoints={pine:5,lamp:4,pond:6,cherry:9,torii:11,pagoda:14,pavilion:20,gate:15};
 const sceneryScore=(type,level)=>sceneryPoints[type]*level;
 const canUpgrade=type=>Boolean(capacityByType[type]||sceneryPoints[type]);
 const tierDetails={
+  gate:["朱柱牌坊","青檐牌坊","双檐牌坊","挂灯牌坊","金边牌坊","金额大牌坊"],
   dango:["团子木摊","暖帘团子屋","瓦檐团子屋","双层甜点铺","围廊团子屋","金脊甜点馆"],
   teaHouse:["青帘茶屋","带檐茶寮","青瓦茶寮","双层茶楼","围廊茶楼","金脊茶楼"],
   arcade:["灯牌游艺屋","挂旗游艺屋","朱檐游艺馆","双层游艺馆","围廊游艺馆","金脊祭典楼"],
@@ -412,8 +414,9 @@ function renderMapMenu(){
   menu.innerHTML='<div class="map-head"><b>'+title+'</b><button id="map-close" aria-label="关闭地块菜单">关闭</button></div>'+
     (detail?'<p>'+detail+'</p>':'')+(canUpgrade(type)?'<p>外观 · '+tierDetails[type][level-1]+(level===tierNames.length?' · 已满级':'')+'</p>':'')+upgradeButton+expandRoom+roadChoices+facadeChoices+animalChoices+categoryTabs+animalGuide+
     (kinds.length?'<div class="items">'+kinds.map(k=>'<button class="item '+(kind===k?"selected":"")+'" data-kind="'+k+'">'+items[k].name+'<span>'+number(items[k].cost)+' 文</span></button>').join("")+'</div>':'')+
-    (locked(x)?'<button class="map-confirm" id="map-expand">查看扩建</button>':
-      mode==="ready"&&!entry&&type&&!bridgeRoad(x,y)?'<button class="map-confirm" id="map-remove">拆除 · 返还 '+Math.floor(items[type].cost*.25)+' 文</button>':
+    (entry&&mode==="ready"?'<button class="map-confirm" id="map-entry-gate">'+(state.entranceGateHidden?"恢复入口门楼":"移除入口门楼并保留道路")+'</button>':
+    locked(x)?'<button class="map-confirm" id="map-expand">查看扩建</button>':
+      mode==="ready"&&!entry&&type&&(type==="gate"||!bridgeRoad(x,y))?'<button class="map-confirm" id="map-remove">'+(type==="gate"?"拆除牌坊并保留石板路":"拆除")+' · 返还 '+Math.floor(items[type].cost*.25)+' 文</button>':
       kinds.length&&kind?'<button class="map-confirm" id="map-place">建造 '+items[kind].name+' · '+number(items[kind].cost)+' 文</button>':
       !type&&mode!=="ready"?'<p>'+ (mode==="closed"?"准备下一日后即可施工。":"今日营业结束后即可施工。")+'</p>':'')+
     '<p id="map-feedback" aria-live="polite">'+(kinds.length&&kind?items[kind].detail:'')+'</p>';
@@ -445,6 +448,12 @@ $("map-menu").addEventListener("click",e=>{
   }
   if(button.dataset.kind){kind=button.dataset.kind;renderMapMenu()}
   if(button.id==="map-place")place();
+  if(button.id==="map-entry-gate"&&mode==="ready"&&cursor?.[0]===entrance[0]&&cursor[1]===entrance[1]){
+    state.entranceGateHidden=!state.entranceGateHidden;
+    save();
+    renderMapMenu();
+    note(state.entranceGateHidden?"入口门楼已移除，游客仍可通行。":"入口门楼已恢复。");
+  }
   if(button.id==="map-remove"){kind="remove";place()}
   if(button.id==="map-upgrade")upgradeFacility(false);
   if(button.id==="map-upgrade-all")upgradeFacility(true);
@@ -557,7 +566,7 @@ function place(){
   if(locked(x)){note("请先在扩建面板开放东坡。");return}
   if(x===entrance[0]&&y===entrance[1]){note("入口地块固定。");return}
   if(kind==="remove"){
-    if(bridgeRoad(x,y)){note("桥头道路需保留通行。");return}
+    if(old!=="gate"&&bridgeRoad(x,y)){note("桥头道路需保留通行。");return}
     if(!old){note("这里是空地。");return}
     const refund=Math.floor(items[old].cost*.25);
     delete state.upgrades[key(x,y)];
@@ -565,13 +574,14 @@ function place(){
     delete state.animals[key(x,y)];
     const extension=extensionAt(x,y);
     if(extension!==undefined)delete state.roomExtensions[extension];
-    state.grid[y][x]=""; state.cash+=refund;
-    note("已拆除 "+items[old].name+"，返还 "+refund+" 文。");
+    state.grid[y][x]=old==="gate"?"path":""; state.cash+=refund;
+    note("已拆除 "+items[old].name+"，返还 "+refund+" 文。"+(old==="gate"?"原地保留石板路。":""));
   }else{
     if(!items[kind])return;
     if(old&&(!isRoad(old)||!isRoad(kind)||old===kind)){note("这块地已有设施，请先选择空地。");return}
     const item=items[kind];
     if(state.cash<item.cost){note("资金还差 "+(item.cost-state.cash)+" 文。");return}
+    if(old==="gate")delete state.upgrades[key(x,y)];
     state.grid[y][x]=kind; state.cash-=item.cost;
   }
   closeMapMenu();save();refreshWalkers();renderPanel();
@@ -642,7 +652,9 @@ function begin(){
       cinema?"泡完汤再看场电影，刚刚好。":gifts?"挑了一份纪念品，带回家送人。":
       room.bonus?"夜里有石灯，走路很安心。":bath.bonus?"边泡汤边看松树，真舒服。":
       food.bonus?"吃完饭还能赏鱼，真好。":"泡汤挺舒服，想再看些庭园景色。";
-    const {route,soak}=guestRoute([room,bath,food,shop,gifts,cinema,...streetStops.map(([id])=>slots[id][i])].filter(Boolean),approach,bath);
+    const stops=[room,bath,food,shop,gifts,cinema,...streetStops.map(([id])=>slots[id][i])].filter(Boolean);
+    const visitOrder=i%2===0?[...stops.filter(stop=>stop.y>=bankStart),...stops.filter(stop=>stop.y<bankStart)]:stops;
+    const {route,soak}=guestRoute(visitOrder,approach,bath);
     const baseFee=lodgingFee(facilityLevel(room.x,room.y))+(bath?75:0)+(food?55:0)+(shop?35:0);
     const multiplier=type==="garden"?10:type==="group"?tour.multiplier:1;
     const giftIncome=gifts?65*multiplier:0, cinemaIncome=cinema?90*multiplier:0;
@@ -1106,8 +1118,8 @@ function shrineGate(x,y,scale=1){
 function riversideGatePosition(){
   return pos(entrance[0],mainlandHeight()-.48);
 }
-function riversideGate(x,y){
-  const point=(u,z)=>[x+u,y+u*.56-z];
+function riversideGate(x,y,level=1,slope=.56){
+  const point=(u,z)=>[x+u,y+u*slope-z];
   const beam=(left,right,height,thickness,color)=>poly([
     point(left,height),point(right,height),point(right,height+thickness),point(left,height+thickness)
   ],color);
@@ -1119,7 +1131,14 @@ function riversideGate(x,y){
   }
   beam(-17,17,17,3,"#9b473d");
   beam(-20,20,24,3,"#c5684d");
-  beam(-21,21,27,2,"#3f5b54");
+  beam(-21,21,27,2,level>=2?"#537d72":"#3f5b54");
+  if(level>=3)beam(-18,18,30,2,level>=5?"#e6b66b":"#375e55");
+  if(level>=4){
+    beam(-15,-11,13,4,"#eac576");
+    beam(11,15,13,4,"#eac576");
+  }
+  if(level>=5)beam(-19,19,24,1,"#e5ba72");
+  if(level===6)beam(-4,4,21,5,"#f5d78d");
   beam(-21,-15,29,1,"#688178");
   beam(15,21,29,1,"#688178");
   beam(-3,3,19,6,"#775044");
@@ -1128,6 +1147,22 @@ function riversideGate(x,y){
 function outsidePlots(x,y){
   const sum=(y-65)/14, diff=(x-239)/25;
   return !inside(Math.round((sum+diff)/2),Math.round((sum-diff)/2));
+}
+function bridgePath(){
+  const head=rawPos(entrance[0],mainlandHeight()-1);
+  const start=[head[0]-49,221+(mainlandHeight()-BASE_HEIGHT)*28];
+  return [head,start,[start[0]-25,start[1]+38],pos(entrance[0],bankStart)];
+}
+function paveConnector(from,to){
+  const [x,y]=from,[a,b]=to, dx=a-x,dy=b-y;
+  const length=Math.hypot(dx,dy), nx=dy/length*7,ny=-dx/length*7;
+  poly([[x-nx,y-ny],[a-nx,b-ny],[a+nx,b+ny],[x+nx,y+ny]],"#b5ad8e");
+  const steps=Math.ceil(length/6);
+  for(let i=0;i<steps;i++){
+    const t=i/steps,end=(i+.84)/steps;
+    poly([[x+dx*t-nx,y+dy*t-ny],[x+dx*end-nx,y+dy*end-ny],
+      [x+dx*end+nx,y+dy*end+ny],[x+dx*t+nx,y+dy*t+ny]],i%2?"#e6dbc0":"#d9d0b3");
+  }
 }
 function ground(){
   const left=(-viewX-mapOffsetX)/mapScale;
@@ -1185,20 +1220,20 @@ function ground(){
     shrineGate(68,316,.88);
     shrineGate(151,208,.72);
   }else{
-    const [x,y]=pos(entrance[0],mainlandHeight()-1);
-    const [endX,endY]=[x-49,221+riverOffset];
-    poly([[x-9,y+4],[x+7,y+9],[endX+8,endY+8],[endX-8,endY+2]],"#d4c6a0");
+    const [head,bridgeEntry,bridgeExit,landing]=bridgePath();
+    const [x,y]=head,[endX,endY]=bridgeEntry;
+    paveConnector(head,bridgeEntry);
     resortLantern(x+6,y+15);resortLantern(x-26,y+33);
     if(state.acrossRiver){
-      const [lx,ly]=pos(entrance[0],bankStart);
-      poly([[endX-34,endY+36],[endX-18,endY+41],[lx+9,ly+4],[lx-8,ly+1]],"#d5c5a2");
+      const [lx,ly]=landing;
+      paveConnector(bridgeExit,landing);
       for(const [dx,dy] of [[-28,43],[-34,49]])diamond(endX+dx,endY+dy,6,3,"#e3d7b6");
       shrineGate(lx-12,ly+3,.62);
       for(const [bx,by] of [[-190,448],[-159,482],[-122,513],[-64,532],[-17,526],[44,533],[103,539],[175,565]]){
         blossom(bx,by,.68);gardenStone(bx+11,by+5,.47);
       }
     }
-    footbridge([endX,endY],[endX-25,endY+38]);
+    footbridge(bridgeEntry,bridgeExit);
     blossom(endX+12,endY+4,.83);
   }
   for(const [x,y,z] of [[63,202,.86],[188,254,.87],[149,302,.83],[206,320,1.04],
@@ -1311,9 +1346,7 @@ function showGuestBubble(review){
 function routeSegment(fromTile,toTile){
   const from=pos(...fromTile), to=pos(...toTile);
   if((fromTile[1]<bankStart)===(toTile[1]<bankStart))return [from,to];
-  const [roadX]=rawPos(entrance[0],bankStart-1);
-  const entry=[roadX-49,221+(bankStart-BASE_HEIGHT)*28];
-  const exit=[entry[0]-25,entry[1]+38];
+  const [,entry,exit]=bridgePath();
   return fromTile[1]<toTile[1]?[from,entry,exit,to]:[from,exit,entry,to];
 }
 function walkingPoint(route,phase,direction=1){
@@ -1352,8 +1385,15 @@ function walkingPhase(route,elapsed){
 }
 let walkingRoutes=[];
 function refreshWalkers(){
-  const routes=roadRoutes(), approach=approachRoute(routes);
-  walkingRoutes=Object.values(facilities(routes)).flat().map(f=>[...approach,...f.route.slice(1)]);
+  const routes=roadRoutes();
+  const connected=[...routes.values()].filter(route=>route.length>1);
+  const cross=routes.get(key(entrance[0],bankStart));
+  walkingRoutes=cross?[cross.slice(-4)]:[];
+  const samples=Math.min(7,connected.length);
+  for(let i=0;i<samples;i++){
+    const route=connected[Math.floor(i*(connected.length-1)/Math.max(1,samples-1))];
+    walkingRoutes.push(route.slice(-7));
+  }
 }
 function drawWater(x,y){
   diamond(x,y+2,25,14,"#668f81");diamond(x,y,25,14,"#589d98");
@@ -1537,7 +1577,7 @@ function draw(){
       }
     }else if(tile==="water"){
       drawWater(a,b);
-    }else if(tile==="path"){
+    }else if(tile==="path"||tile==="gate"){
       diamond(a,b,24,13,"#d6d4bc");
       for(let u=0;u<4;u++)for(let v=0;v<4;v++){
         const px=a+(u-v)*6,py=b-10+(u+v)*3.25;
@@ -1554,6 +1594,11 @@ function draw(){
     if(selected||candidate){
       ctx.strokeStyle="#fff2ad";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(a,b-13);
       ctx.lineTo(a+24,b);ctx.lineTo(a,b+13);ctx.lineTo(a-24,b);ctx.closePath();ctx.stroke();
+    }
+    if(tile==="gate"){
+      const alongX=neighbors(x,y).filter(([nx,ny])=>ny===y&&isRoad(state.grid[ny][nx])).length;
+      const alongY=neighbors(x,y).filter(([nx,ny])=>nx===x&&isRoad(state.grid[ny][nx])).length;
+      layers.push({y:b,paint:()=>riversideGate(a,b,facilityLevel(x,y),alongX>alongY?-.56:.56)});
     }
     if(!tile||isRoad(tile))continue;
     const extension=tile==="room"?extensionAt(x,y):undefined;
@@ -1573,7 +1618,7 @@ function draw(){
     layers.push({y:gy+7,paint:()=>riversideGate(gx,gy)});
   }
   const [ex,ey]=pos(...entrance);
-  layers.push({y:ey,paint:()=>{
+  if(!state.entranceGateHidden)layers.push({y:ey,paint:()=>{
     diamond(ex,ey+3,21,7,"#a69b77");
     rect(ex-16,ey-24,5,27,"#765441");rect(ex+11,ey-24,5,27,"#765441");
     rect(ex-15,ey-21,2,21,"#bb865b");rect(ex+12,ey-21,2,21,"#bb865b");
@@ -1636,10 +1681,14 @@ function draw(){
       }
     }});
   });
-  if(mode!=="running")walkingRoutes.slice(0,3).forEach((route,i)=>{
-    const t=(sceneryTime/(6100+i*900)+i*.29)%1;
-    const [x,y,facing,back]=walkingPoint(route,t<.5?t*2:(1-t)*2,t<.5?1:-1);
-    layers.push({y,paint:()=>person(x+(i%2?3:-3),y+i%2,i===0?"staff":i===1?"food":"bath",stride+i,facing,back)});
+  walkingRoutes.forEach((route,i)=>{
+    walkingPhase(route,0);
+    const duration=routeTimings.get(route).at(-1);
+    const elapsed=(sceneryTime+i*1270)%(duration*2);
+    const outbound=elapsed<duration;
+    const phase=walkingPhase(route,outbound?elapsed:duration*2-elapsed);
+    const [x,y,facing,back]=walkingPoint(route,phase,outbound?1:-1);
+    layers.push({y,paint:()=>person(x+(i%2?2:-2),y,i===0?"staff":i%2?"food":"bath",stride+i,facing,back)});
   });
   layers.sort((a,b)=>a.y-b.y).forEach(layer=>layer.paint());
   if(state.acrossRiver){
