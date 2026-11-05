@@ -4,7 +4,7 @@
 
 ## 本地试玩
 
-游戏源码在根目录的 `index.html`。页面包含游戏画面、样式和逻辑，使用 HTML、CSS、JavaScript 和 Canvas，无需安装前端依赖。
+游戏使用 HTML、CSS、原生 JavaScript ES Modules 和 Canvas。页面、样式、经营逻辑、界面和绘图已分别拆到独立文件，无需构建或安装运行时依赖。
 
 下载仓库后，在仓库目录运行以下命令。需要 Python 3。
 
@@ -13,6 +13,39 @@ python -m http.server 5191
 ```
 
 然后在浏览器打开 [本地试玩页面](http://127.0.0.1:5191/)。
+
+也可以使用 Node.js 22 或更新版本，在仓库目录运行 `npm start`，访问地址相同。因为使用 ES Modules，请通过本地 HTTP 服务打开，直接双击 HTML 文件无法正常加载模块。部署时需要一起上传 `index.html`、`styles/` 和 `src/`。
+
+## 代码维护
+
+| 位置                  | 职责                                           |
+| --------------------- | ---------------------------------------------- |
+| `index.html`          | 页面结构、按钮、弹窗和 Canvas                  |
+| `styles/game.css`     | 布局、配色、组件样式和手机适配                 |
+| `src/main.js`         | 启动顺序、动画循环和营业时钟                   |
+| `src/data/catalog.js` | 设施、价格、升级、地块扩建和旅客数值配置       |
+| `src/core/`           | 状态与存档、道路和容量规则、天气旅客、营业结算 |
+| `src/ui/`             | 建造操作、经营面板、设置和反馈提示             |
+| `src/render/`         | 镜头、建筑、地形、人物、地块和地图合成         |
+| `src/input.js`        | 地图拖动、点击和键盘操作                       |
+
+模块职责、状态约定和扩展方法见 [维护说明](docs/architecture.md)。
+
+修改代码后可以运行检查：
+
+```bash
+npm run check
+```
+
+首次运行浏览器回归测试前，安装开发依赖与 Chromium：
+
+```bash
+npm install
+npx playwright install chromium
+npm test
+```
+
+测试会启动临时本地服务，检查面板、建造升级拆除、营业续玩、旅行团、存档导入导出和手机布局；截图写入 `output/tests/`，该目录不会提交到 Git。
 
 ## 怎么玩
 
